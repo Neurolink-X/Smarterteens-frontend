@@ -1,14 +1,17 @@
-// import { Home } from 'lucide-react'
-// import AuthPage from './pages/auth/AuthPage'
-import Navbar from './pages/Navbar/Navbar'
+import { Routes, Route } from "react-router-dom";
+import Navbar from './pages/Navbar/Navbar';
+import MentorDashboard from "./components/MentorDashboard";
 
 const App = () => {
   return (
     <div>
       <Navbar />
-      {/* <Home /> */}
+      <Routes>
+        <Route path="/MentorDashboard" element={<MentorDashboard />} />
+       
+      </Routes>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;

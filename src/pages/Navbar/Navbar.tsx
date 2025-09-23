@@ -1,5 +1,6 @@
 import { Armchair, Circle, Dot, GraduationCap, LogIn, Menu, Minus, UserPlus } from 'lucide-react';
 import React from 'react'
+import MentorDashboard from '../../components/MentorDashboard';
 import { useState } from 'react';
 import { Link } from "react-router-dom"
 
@@ -34,6 +35,16 @@ const Navbar = () => {
                 />
                 </div>
                 <Link to='/Heurt'>Heurt</Link>
+            </div>
+            <div className="flex my-6 lg:mx-2">
+                <div className='flex justify-center mr-1'>
+                <Circle  className="w-4 h-4 text-gray-600 mt-1" />
+                <Dot
+                size={25}
+                className="absolute mt-3 text-gray-600"
+                />
+                </div>
+                <Link to='/MentorDashboard'>Mentor Dashboard</Link>
             </div>
             <div className="flex my-6 lg:mx-2">
                 <div className='flex justify-center mr-1'>
