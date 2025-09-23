@@ -7,7 +7,7 @@ interface AuthPageProps {
 
 const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
