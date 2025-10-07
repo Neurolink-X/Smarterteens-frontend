@@ -56,6 +56,11 @@ const Navbar = () => {
               <Link to="/Heurt">Stodice</Link>
             </div>
           </div>
+          <div className="flex my-6 lg:mx-2">
+            <div className="flex justify-center mr-1">
+              <Link to="/GamifiedDashboard">Gamified Dashboard</Link>
+            </div>
+          </div>
 
           <div className="flex my-6 lg:mx-2">
             <button className="px-4 py-2 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-lg hover:from-blue-800 hover:to-indigo-900 transition-all duration-300 flex items-center gap-2">
@@ -78,4 +83,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar
+export default Navbar;
