@@ -17,6 +17,7 @@ const Navbar = () => {
       <div className="flex justify-between items-center px-4 py-3 lg:px-8 lg:py-4 shadow-md bg-white/70 backdrop-blur-md">
         {/*Logo Section */}
         <div className="flex items-center space-x-2">
+          <Link to="/" className="flex">
           <img
             src="/NavbarImages/SmaterTeensLogo.jpg"
             alt="SmarterTeensLogo"
@@ -25,6 +26,7 @@ const Navbar = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-black">
             Smarter<span className="text-yellow-500">Teens</span>
           </h1>
+          </Link>
         </div>
 
         {/*Desktop Navigation*/}
@@ -49,16 +51,17 @@ const Navbar = () => {
             </div>
           ))}
           <button className="px-4 py-2 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-lg hover:from-blue-800 hover:to-indigo-900 transition-all duration-300">
-            <Link to="/Heurt">Continue</Link>
+            <Link to="/Heurt">Admin</Link>
           </button>
 
-          <Link
-            to="/auth?mode=signup"
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center gap-2"
+         <Link
+          to="/auth?mode=signup"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
-            Sign Up
-          </Link>
+             Sign Up
+            </Link>
+
         </nav>
 
         {/*Mobile Menu Button*/}
@@ -94,8 +97,8 @@ const Navbar = () => {
             ))}
 
             <button className="w-full px-4 py-2 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-lg hover:from-blue-800 hover:to-indigo-900 transition-all duration-300">
-              <Link to="/Heurt" onClick={() => setIsMenuOpen(false)}>
-                Continue
+              <Link to="/Admin" onClick={() => setIsMenuOpen(false)}>
+                Admin
               </Link>
             </button>
 
