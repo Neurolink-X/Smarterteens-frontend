@@ -43,20 +43,56 @@ const Hero: React.FC = () => {
   return (
     <section className="mt17 lg:mt-10 relative overflow-hidden">
       {/* Desktop view */}
-      <div className="flex flex-wrap">
-        <div className="flex w-full md:w-1/2 lg:w-1/4">
-          <img src="HomeImages/HeroImg1.webp" alt="Image 1" className="w-full object-cover" />
-        </div>
-        <div className="flex max-sm:hidden md:w-1/2 lg:w-1/4">
-          <img src="HomeImages/HeroImg2.webp" alt="Image 2" className="w-full lg:h-auto object-cover" />
-        </div>
-        <div className="flex max-lg:hidden lg:w-1/4">
-          <img src="HomeImages/HeroImg1.webp" alt="Image 3" className="w-full lg:h-auto object-cover" />
-        </div>
-        <div className="flex max-lg:hidden lg:w-1/4">
-          <img src="HomeImages/HeroImg1.webp" alt="Image 4" className="w-full lg:h-auto object-cover" />
-        </div>
-      </div>
+      <div className="flex flex-wrap relative">
+  {/* === Image 1 === */}
+  <div className="flex w-full md:w-1/2 lg:w-1/4">
+    <img
+      src="HomeImages/HeroImg1.webp"
+      alt="Image 1"
+      className="w-full object-cover h-full"
+    />
+  </div>
+
+  {/* === Image 2 === */}
+  <div className="flex max-sm:hidden md:w-1/2 lg:w-1/4">
+    <img
+      src="HomeImages/HeroImg2.webp"
+      alt="Image 2"
+      className="w-full object-cover h-full"
+    />
+  </div>
+
+  {/* === Image 3 === */}
+  <div className="flex max-lg:hidden lg:w-1/4">
+    <img
+      src="HomeImages/HeroImg1.webp"
+      alt="Image 3"
+      className="w-full object-cover h-full"
+    />
+  </div>
+
+  {/* === Image 4 === */}
+  <div className="flex max-lg:hidden lg:w-1/4">
+    <img
+      src="HomeImages/HeroImg1.webp"
+      alt="Image 4"
+      className="w-full object-cover h-full"
+    />
+  </div>
+
+  {/* === Overlay (spanning last 2 images on large, centered on small/medium) === */}
+  <div
+    className="absolute top-0 lg:left-1/2 left-0 w-full lg:w-1/2 h-full flex flex-col justify-center items-center bg-black/40 text-white px-6">
+    <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+      Unlock Your Potential.<br />Shape Your Future.
+    </h1>
+    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-all">
+      Explore Courses
+    </button>
+  </div>
+</div>
+
+
 
       <div className="relative bg-gradient-to-b from-[#0A0E2A] to-blue-950 px-6 h-150 lg:h-120 md:h-75 overflow-hidden">
         <h2 className="text-3xl md:text-4xl font-bold text-white text-center pt-10">Impact Stats</h2>

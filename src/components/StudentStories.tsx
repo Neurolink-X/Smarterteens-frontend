@@ -6,7 +6,7 @@ const StudentStories: React.FC = () => {
     <section className="py-10 bg-white">
       <div className="max-w-6xl mx-auto px-5">
 
-        <h2 className="text-2xl font-semibold text-center mb-8">
+        <h2 className="text-2xl font-bold text-center mb-8">
           Student Success Stories
         </h2>
 
