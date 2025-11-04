@@ -6,11 +6,20 @@ import Courses from "./pages/Home/Courses";
 import MentorDashboard from "./components/MentorDashboard";
 import GamifiedDashboard from "./components/GamifiedDashboard";
 import AuthPage from "./pages/auth/AuthPage";
+import AdminDashboard from "./components/Admin Dashboard/AdminDashboard";
 
 const App = () => {
   const location = useLocation();
 
-  const hideFooter = location.pathname === "/auth";
+  // Hide footer on these routes
+  const hideFooterRoutes = [
+    "/auth",
+    "/MentorDashboard",
+    "/GamifiedDashboard",
+    "/AdminDashboard",
+  ];
+
+  const hideFooter = hideFooterRoutes.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,6 +40,7 @@ const App = () => {
           <Route path="/courses" element={<Courses />} />
           <Route path="/MentorDashboard" element={<MentorDashboard />} />
           <Route path="/GamifiedDashboard" element={<GamifiedDashboard />} />
+          <Route path="/AdminDashboard" element={<AdminDashboard />} />
 
           <Route
             path="*"
@@ -43,6 +53,7 @@ const App = () => {
           />
         </Routes>
       </main>
+
       {!hideFooter && <Footer />}
     </div>
   );

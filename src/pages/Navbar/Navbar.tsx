@@ -10,6 +10,7 @@ const Navbar = () => {
     { label: "Mentor Dashboard", path: "/MentorDashboard" },
     { label: "Stodice", path: "/Heurt" },
     { label: "Gamified Dashboard", path: "/GamifiedDashboard" },
+    { label: "Admin Dashboard", path: "/AdminDashboard" },
   ];
 
   return (
@@ -51,7 +52,7 @@ const Navbar = () => {
             </div>
           ))}
           <button className="px-4 py-2 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-lg hover:from-blue-800 hover:to-indigo-900 transition-all duration-300">
-            <Link to="/Heurt">Admin</Link>
+            <Link to="/continue">Continue</Link>
           </button>
 
          <Link
@@ -97,8 +98,8 @@ const Navbar = () => {
             ))}
 
             <button className="w-full px-4 py-2 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-lg hover:from-blue-800 hover:to-indigo-900 transition-all duration-300">
-              <Link to="/Admin" onClick={() => setIsMenuOpen(false)}>
-                Admin
+              <Link to="/AdminDashboard" onClick={() => setIsMenuOpen(false)}>
+                Continue
               </Link>
             </button>
 
