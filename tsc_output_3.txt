@@ -1,0 +1,13 @@
+﻿src/features/admin/components/CourseApproval.tsx(9,60): error TS6133: 'Calendar' is declared but its value is never read.
+src/features/admin/components/CourseApproval.tsx(9,76): error TS6133: 'DollarSign' is declared but its value is never read.
+src/features/admin/components/CourseApproval.tsx(9,88): error TS6133: 'Users' is declared but its value is never read.
+src/features/admin/components/MentorApproval.tsx(1,1): error TS6133: 'useState' is declared but its value is never read.
+src/features/admin/components/MentorApproval.tsx(276,46): error TS2304: Cannot find name 'setSelectedMentor'.
+src/features/admin/pages/AdminDashboard.tsx(126,54): error TS6133: 'setOpen' is declared but its value is never read.
+src/features/admin/pages/AdminDashboard.tsx(284,26): error TS6133: 'open' is declared but its value is never read.
+src/features/landing/components/Courses.tsx(2,24): error TS6133: 'Course' is declared but its value is never read.
+src/features/landing/components/Hero.tsx(1,1): error TS6133: 'Dot' is declared but its value is never read.
+src/features/landing/components/StudentStories.tsx(2,19): error TS1484: 'Story' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/mentor/components/CoursesPage.tsx(8,10): error TS1484: 'ActivePageType' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/mentor/components/ViewCoursePage.tsx(2,10): error TS1484: 'ActivePageType' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/mentor/pages/MentorDashboard.tsx(15,10): error TS1484: 'ActivePageType' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
