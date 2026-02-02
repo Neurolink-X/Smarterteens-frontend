@@ -174,34 +174,58 @@ const Footer = () => {
                 </div>
                 <div>
                     <h4 className="text-lg font-semibold text-white mb-3">Contact</h4>
-                    <p className="text-gray-400 text-sm">📍 Pune, India</p>
-                    <p className="text-gray-400 text-sm">✉️ info@smarterteens.com</p>
-                    <p className="text-gray-400 text-sm">📞 +91 98765 43210</p>
+                    <p className="text-gray-400 text-sm mb-2">📍 Pune, India</p>
+                    <p className="text-gray-400 text-sm mb-2">✉️ info@smarterteens.com</p>
+                    <p className="text-gray-400 text-sm mb-2">✉️ arjunfreedom2312@gmail.com</p>
+                    <p className="text-gray-400 text-sm mb-2">📞 +91 98893 05803</p>
+                    <p className="text-gray-400 text-sm mb-2">💬 WhatsApp: +91 98893 05803</p>
+                    <p className="text-gray-500 text-xs mt-4">
+                        Support available 24/7
+                    </p>
                 </div>
             </div>
 
-            <div className="border-t border-gray-800 text-center py-4 text-sm text-gray-500">
-                © {new Date().getFullYear()}{" "}
-                <span className="text-white">SmarterTeens</span>. All rights reserved.
+            <div className="border-t border-gray-800">
+                <div className="text-center py-4 text-sm text-gray-500">
+                    © {new Date().getFullYear()}{" "}
+                    <span className="text-white">SmarterTeens</span>. All rights reserved.
+                </div>
+                <div className="text-center pb-4 text-xs text-gray-600">
+                    Early access — continuously improving
+                </div>
             </div>
 
+            {/* Chat FAB - fixed with safe-area insets */}
             <button
+                type="button"
                 onClick={() => setIsChatOpen(!isChatOpen)}
-                className="fixed bottom-6 left-6 group z-50"
+                className="fixed z-50 group rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                style={{
+                    bottom: "max(1rem, var(--safe-bottom))",
+                    left: "max(1rem, var(--safe-left))",
+                }}
+                aria-label={isChatOpen ? "Close chat" : "Open chat"}
             >
-                <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 text-white shadow-lg shadow-indigo-400/40 transition-all duration-500 hover:scale-110 hover:shadow-indigo-500/60 backdrop-blur-md border border-white/20">
-                    <span className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 opacity-0 group-hover:opacity-20 blur-2xl transition-all duration-500"></span>
+                <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 text-white shadow-lg shadow-indigo-400/40 transition-all duration-200 hover:scale-105 hover:shadow-indigo-500/50 backdrop-blur-md border border-white/20 overflow-hidden">
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-200" aria-hidden />
                     <BsChatDotsFill
                         size={28}
-                        className="relative z-10 transition-transform duration-500 group-hover:scale-110"
+                        className="relative z-10 w-6 h-6 sm:w-7 sm:h-7"
+                        aria-hidden
                     />
-                    <span className="absolute inset-0 rounded-full border-2 border-indigo-400/40 animate-[ping_2s_linear_infinite]"></span>
+                    <span
+                        className="absolute inset-0 rounded-full border-2 border-indigo-400/50 animate-[ping_2s_ease-in-out_infinite] pointer-events-none"
+                        aria-hidden
+                    />
                 </div>
             </button>
 
             {/* Chatbot Window */}
             {isChatOpen && (
-                <div className="fixed bottom-24 left-6 w-96 h-[480px] bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-gray-200 overflow-hidden z-50 animate-fadeInUp flex flex-col">
+                <div
+                    className="fixed left-4 right-4 sm:left-6 sm:right-auto sm:w-96 h-[80vh] max-h-[520px] sm:h-[480px] bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-gray-200 overflow-hidden z-50 animate-fadeInUp flex flex-col"
+                    style={{ bottom: "max(5.5rem, calc(var(--safe-bottom) + 5rem))", left: "max(1rem, var(--safe-left))" }}
+                >
                     {/* Header */}
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-4 flex justify-between items-center shadow-md">
                         <div className="flex items-center space-x-3">
@@ -218,10 +242,12 @@ const Footer = () => {
                             </h3>
                         </div>
                         <button
+                            type="button"
                             onClick={() => setIsChatOpen(false)}
-                            className="text-white hover:text-gray-200 text-xl transition"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white hover:text-gray-200 text-xl transition rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="Close chat"
                         >
-                            ✖
+                            ✕
                         </button>
                     </div>
 

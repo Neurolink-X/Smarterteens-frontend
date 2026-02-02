@@ -85,30 +85,28 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
     };
 
     return (
-        <div
-            className="relative h-screen w-screen overflow-hidden"
-        >
+        <div className="relative min-h-screen min-h-[100dvh] w-full overflow-x-hidden overflow-y-auto">
             <img
                 src="/UpperImg.jpg"
-                alt="Top"
-                className="absolute top-0 w-full h-20 object-cover"
+                alt=""
+                className="absolute top-0 left-0 w-full h-16 sm:h-20 object-cover pointer-events-none"
             />
             <img
                 src="/LowerImg.jpg"
-                alt="Bottom"
-                className="absolute bottom-0 w-full h-20 object-cover"
+                alt=""
+                className="absolute bottom-0 left-0 w-full h-16 sm:h-20 object-cover pointer-events-none"
             />
-            <div className="flex h-full">
-                <div className="w-full md:w-1/2 flex justify-center items-center z-10 relative">
-                    <div className="max-w-md w-full bg-white bg-opacity-80 backdrop-blur-lg py-8 px-15 rounded-2xl shadow-xl m-6">
-                        <div className="flex mb-6">
+            <div className="flex min-h-screen min-h-[100dvh] flex-col md:flex-row">
+                <div className="w-full md:w-1/2 flex justify-center items-center z-10 relative py-6 sm:py-8 px-4 sm:px-6">
+                    <div className="max-w-md w-full bg-white/90 backdrop-blur-lg py-6 sm:py-8 px-4 sm:px-6 md:px-8 rounded-2xl shadow-xl">
+                        <div className="flex items-center gap-3 mb-6">
                             <img
                                 src="/SmaterTeensLogo.jpg"
-                                alt="SmaterTeensLogo"
-                                className="w-12 h-12 mt-2 mr-2"
+                                alt=""
+                                className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                             />
                             <div>
-                                <h1 className="text-3xl font-bold text-black">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                                     Smarter<span className="text-yellow-500">Teens</span>
                                 </h1>
                                 <p className="text-sm text-gray-500">Learn, Grow, Succeed</p>
@@ -126,7 +124,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                                     type="text"
                                     placeholder="Name"
                                     required
-                                    className="w-full border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2"
+                                    className="w-full min-h-[44px] px-3 border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2 rounded-t transition-colors"
                                     value={formData.username}
                                     onChange={(e) =>
                                         setFormData({ ...formData, username: e.target.value })
@@ -138,8 +136,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                                 type="email"
                                 placeholder="Email Address"
                                 required
-                                className="w-full border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2"
-                                value={formData.email}
+className="w-full min-h-[44px] px-3 border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2 rounded-t transition-colors"
+                                    value={formData.email}
                                 onChange={(e) =>
                                     setFormData({ ...formData, email: e.target.value })
                                 }
@@ -149,8 +147,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="Password"
                                 required
-                                className="w-full border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2"
-                                value={formData.password}
+className="w-full min-h-[44px] px-3 border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2 rounded-t transition-colors"
+                                    value={formData.password}
                                 onChange={(e) =>
                                     setFormData({ ...formData, password: e.target.value })
                                 }
@@ -162,8 +160,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="Confirm Password"
                                         required
-                                        className="w-full border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2"
-                                        value={formData.confirmPassword}
+className="w-full min-h-[44px] px-3 border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2 rounded-t transition-colors"
+                                    value={formData.confirmPassword}
                                         onChange={(e) =>
                                             setFormData({ ...formData, confirmPassword: e.target.value })
                                         }
@@ -173,7 +171,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                                         type="tel"
                                         placeholder="Phone number"
                                         required
-                                        className="w-full border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2"
+                                        className="w-full min-h-[44px] px-3 border-b-2 border-gray-300 focus:border-purple-500 outline-none py-2 rounded-t transition-colors"
                                         value={formData.contact}
                                         onChange={(e) =>
                                             setFormData({ ...formData, contact: e.target.value })
@@ -185,7 +183,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                             <button
                                 type="button"
                                 onClick={handleGoogleSignIn}
-                                className="w-full flex items-center justify-center border border-blue-500 rounded-3xl py-2 hover:bg-gray-100"
+                                className="w-full min-h-[48px] flex items-center justify-center gap-2 border border-gray-300 rounded-xl py-3 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <img src="/GoogleLogo.png" alt="Google" className="w-5 mr-2" />
                                 Sign in with Google
@@ -194,7 +192,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                             <button
                                 type="button"
                                 onClick={handleAppleSignIn}
-                                className="w-full flex items-center justify-center bg-white text-black border border-gray-800 rounded-3xl py-2 hover:opacity-90"
+                                className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-gray-900 text-white border border-gray-800 rounded-xl py-3 hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-600"
                             >
                                 Sign in with Apple
                                 <img src="/Applelogo.png" alt="Apple" className="w-5 mr-2 ml-10" />
@@ -203,7 +201,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-purple-600 text-white rounded-3xl py-2 hover:bg-purple-700 disabled:opacity-50"
+                                className="w-full min-h-[48px] bg-purple-600 text-white rounded-xl font-medium py-3 hover:bg-purple-700 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                             >
                                 {isLoading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
                             </button>

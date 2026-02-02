@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 
 import CourseDetail from "./features/landing/pages/CourseDetail";
 import CoursePlayer from "./features/landing/pages/CoursePlayer";
+import ParentView from "./features/landing/components/ParentView";
 
 // Legacy Components (To be refactored)
 
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/courses" element={<Courses />} />
         <Route path="/course/:id" element={<CourseDetail />} />
         <Route path="/course/:id/learn" element={<CoursePlayer />} />
+        <Route path="/parent-view" element={<ParentView />} />
       </Route>
 
       {/* Auth Routes */}
