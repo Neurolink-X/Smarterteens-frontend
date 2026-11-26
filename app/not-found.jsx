@@ -1,0 +1,1 @@
+export default function NotFound(){return <section className="section"><h1>Page not found</h1><p>This route may belong to the previous application.</p><a href="/">Return home</a></section>}
