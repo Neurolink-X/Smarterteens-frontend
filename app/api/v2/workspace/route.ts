@@ -14,7 +14,7 @@ export async function GET():Promise<Response>{
  try{
  const {token,id}=await getUser();const own=await institute(token,id);if(!own)return reply({institute:null,records:{},hasMore:false});
  const context=ownerContext(id,own);
- const entries=await Promise.all(Object.entries(tables).map(async([kind,table])=>[kind,await scoped(token,table,context,{order:"created_at.desc",limit:"101"})] as const));
+ const entries=await Promise.all(Object.entries(tables).map(async([kind,table])=>[kind,await scoped(token,table,context,{order:"created_at.desc,id.desc",limit:"101"})] as const));
  return reply({institute:own,records:Object.fromEntries(entries.map(([k,rows])=>[k,rows.slice(0,100)])),hasMore:entries.some(([,rows])=>rows.length>100)});
  }catch(e:unknown){return handleError(e);}
 }
