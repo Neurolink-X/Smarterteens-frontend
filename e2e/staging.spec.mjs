@@ -40,12 +40,17 @@ test("two actual staging owners: browser → API → DB → UI, tenant and role 
   const learner=await save(p,"learner",{batch_id:batch.id,code});
   expect((await req(q,"POST",{kind:"learner",record:{batch_id:batch.id,code:code+"-B"}})).status()).toBe(409);
   const day=new Date().toISOString().slice(0,10);
-  await save(p,"attendance",{learner_id:learner.id,day,status:"present"});
+  const attendance=await save(p,"attendance",{learner_id:learner.id,day,status:"present"});
   expect((await req(p,"POST",{kind:"attendance",record:{learner_id:learner.id,day,status:"present"}})).status()).toBe(409);
   const invoice=await save(p,"invoice",{learner_id:learner.id,description:code,amount_paise:12345,due_on:day});
   expect((await req(q,"POST",{kind:"receipt",record:{invoice_id:invoice.id,method:"cash"}})).status()).toBe(404);
   const receipt=await save(p,"receipt",{invoice_id:invoice.id,method:"cash",amount_paise:1});expect(receipt.amount_paise).toBe(12345);
   expect((await req(p,"POST",{kind:"receipt",record:{invoice_id:invoice.id,method:"cash"}})).status()).toBe(409);
+  for(const [table,row] of [["st_batches",batch],["st_learners",learner],["st_attendance",attendance],["st_invoices",invoice],["st_receipts",receipt]]){
+   const own=await raw(c,authA.access_token,table,"id=eq."+row.id);expect(own.status,table+" owner read").toBe(200);expect((await own.json()).map(x=>x.id)).toEqual([row.id]);
+   const foreign=await raw(c,authB.access_token,table,"id=eq."+row.id);expect(foreign.status,table+" tenant RLS").toBe(200);expect(await foreign.json()).toEqual([]);
+   const anonymous=await fetch(c.url+"/rest/v1/"+table+"?id=eq."+row.id,{headers:{apikey:c.key},redirect:"error",signal:AbortSignal.timeout(10000)});expect([401,403]).toContain(anonymous.status);
+  }
   await p.reload();await expect(p.getByText(code+" · ₹123.45 · Recorded paid",{exact:false})).toBeVisible({timeout:20000});
   await p.getByRole("button",{name:"Sign out"}).click();await expect(p.getByRole("button",{name:"Sign in",exact:true})).toBeVisible();expect((await req(p,"GET")).status()).toBe(401);
  }finally{await a.close();await b.close();}
