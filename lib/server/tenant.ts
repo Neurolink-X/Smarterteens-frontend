@@ -1,4 +1,4 @@
-import {record,text} from "./api-contract";
+import {record,text} from "./api-contract.ts";
 export type TenantContext = Readonly<{instituteId:string;userId:string;role:"owner"}>;
 const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function id(value:unknown):string {const v=text(value,36);if(!uuidPattern.test(v))throw new RangeError("Invalid identifier");return v;}
