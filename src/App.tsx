@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import FutureLearning from "./features/v2/FutureLearning";
 import { MainLayout } from "./shared/layouts/MainLayout";
 import { AuthLayout } from "./shared/layouts/AuthLayout";
 
@@ -22,8 +23,10 @@ const App = () => {
     <Routes>
       {/* Public Layout Routes */}
       <Route element={<MainLayout />}>
+        <Route path="/" element={<FutureLearning />} />
+        <Route path="/future-labs" element={<FutureLearning />} />
         <Route
-          path="/"
+          path="/legacy"
           element={
             <>
               <Hero />
