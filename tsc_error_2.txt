@@ -1,1 +1,0 @@
-﻿src/features/admin/components/MentorApproval.tsx(33,10): error TS6133: 'selectedMentor' is declared but its value is never read.
