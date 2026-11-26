@@ -156,7 +156,9 @@
         "lib/experiments.mjs",
         "lib/interdisciplinary.mjs",
         "lib/mobility.mjs",
-        "lib/future-world.mjs"
+        "lib/future-world.mjs",
+        "app/future/tech-lab.jsx",
+        "lib/future-tech-lab.mjs"
       ],
       "tests": [
         "tests/learning.test.mjs",
@@ -164,7 +166,8 @@
         "tests/interdisciplinary.test.mjs",
         "tests/future-world.test.mjs",
         "scripts/smoke.mjs",
-        "e2e/public.spec.mjs"
+        "e2e/public.spec.mjs",
+        "tests/future-tech-lab.test.mjs"
       ],
       "pages": [
         "/labs",
@@ -283,6 +286,34 @@
         "/api/health"
       ],
       "pages": []
+    },
+    {
+      "id": "india-skills",
+      "purpose": "India-first foundational and emerging technology practice in English Hindi Hinglish",
+      "roles": [
+        "visitor",
+        "student",
+        "teacher",
+        "parent"
+      ],
+      "flow": "Choose language → read scenario → answer → feedback → local practice check → suggested next skill",
+      "positive": "Correct answer advances checks and next skill; language preserves selected options",
+      "negative": "Wrong answer does not count; duplicate and invalid IDs rejected",
+      "integration": "Home, navigation, existing courses and future labs",
+      "security": "No identity, external AI call, bank details or real payments; local practice only",
+      "performance": "No API calls from scenario practice",
+      "files": [
+        "lib/india-skills.mjs",
+        "app/india-skills/page.jsx"
+      ],
+      "tests": [
+        "tests/india-skills.test.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "pages": [
+        "/india-skills"
+      ],
+      "apis": []
     }
   ]
 }
