@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 const base="http://localhost:3000";
-for(const p of ["/","/courses","/course/money","/course/math","/course/communication","/course/energy","/course/design","/course/data","/missions","/student","/diagnostic","/labs","/coaching","/pricing","/privacy","/api/health"]){const r=await fetch(base+p);assert.equal(r.status,200,p);}
+for(const p of ["/","/courses","/course/money","/course/math","/course/communication","/course/energy","/course/design","/course/data","/missions","/future","/student","/diagnostic","/labs","/coaching","/pricing","/privacy","/api/health"]){const r=await fetch(base+p);assert.equal(r.status,200,p);}
 const post=(p,b)=>fetch(base+p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
 const money=await post("/api/v2/labs/money",{purchased:20,sold:15,unitCost:40,unitPrice:65,overhead:100});assert.equal(money.status,200);assert.deepEqual(await money.json(),{sales:975,cashSpent:900,cashChange:75,profit:275,inventoryCost:200});
 assert.equal((await post("/api/v2/labs/money",{})).status,400);
