@@ -1,0 +1,3 @@
+import Link from "next/link";
+import {courses} from "../../lib/courses.mjs";
+export default function Courses(){return <section className="section"><p className="eyebrow">FREE MINI COURSES</p><h1>Learn one concept at a time.</h1><p>Short lessons with practice checks. No payment or account needed.</p><div className="grid">{courses.map(c=><article key={c.id}><h2>{c.title}</h2><p>{c.description}</p><p>{c.lessons.length} lessons</p><Link className="primary" href={"/course/"+c.id}>Start course</Link></article>)}</div><Link href="/student">View learning progress on this device</Link></section>}
