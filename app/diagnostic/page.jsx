@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
+import {recommendPractice} from "../../lib/roadmap.mjs";
 const path="/api/v2/learning/diagnostic";
 const copy=[
 {title:"Find your next learning step",intro:"Try eight practical questions. This is a short practice check, not a standardized assessment or career prediction.",retry:"Try again",hint:"Show hint",submit:"Check my answers",report:"Shareable learning summary",print:"Print learning summary",disclaimer:"This report covers only these practice items. It does not establish overall ability or identity. Nothing is saved to a student profile.",error:"Could not connect. Retry the exercise.",loading:"Loading practice questions…",score:"Correct answers",review:"Review your reasoning",next:"Recommended next step",practice:"Practice the areas where you made mistakes; try another scenario in the future labs.",all:"Try a different challenge in the future labs.",language:"Language",answered:"answered"},
@@ -23,7 +24,7 @@ export default function Diagnostic(){
  <button disabled={busy||Object.keys(answers).length!==data.items.length}>{t.submit}</button></form>:<>
  <article className="lab" id="learning-summary"><h2>{t.report}</h2><p className="amount">{result.correct}/{result.total} {t.score}</p>
  <div className="grid">{Object.entries(result.areas).map(([key,value])=><article key={key}><h3>{data.skills[key][lang]}</h3><p>{value.correct}/{value.total}</p></article>)}</div>
- <h3>{t.next}</h3><p>{result.correct===result.total?t.all:t.practice}</p><p>{t.disclaimer}</p><div className="actions"><Link className="primary" href="/labs">{lang?"फ्यूचर लैब":"Future labs"}</Link><button onClick={()=>window.print()}>{t.print}</button><button onClick={()=>{setResult(null);setAnswers({});setHints({});}}>{t.retry}</button></div></article>
+ <h3>{t.next}</h3><p>{result.correct===result.total?t.all:t.practice}</p><div className="grid">{recommendPractice(result.areas).map(a=><article key={a.skill}><h3>{data.skills[a.skill][lang]}</h3><p>{a.correct}/{a.total} · {a.needsPractice?(lang?"पहले अभ्यास करें":"Practice first"):(lang?"आगे बढ़ें":"Explore further")}</p><Link href={"/course/"+a.courseId}>{lang?"संबंधित पाठ खोलें":"Open related lessons"} →</Link></article>)}</div><p>{t.disclaimer}</p><div className="actions"><Link className="primary" href="/labs">{lang?"फ्यूचर लैब":"Future labs"}</Link><button onClick={()=>window.print()}>{t.print}</button><button onClick={()=>{setResult(null);setAnswers({});setHints({});}}>{t.retry}</button></div></article>
  <h2>{t.review}</h2>{result.feedback.map((f,i)=><article className="lab" key={f.id}><h3>{data.items[i].question[lang]}</h3><p>{f.isCorrect?(lang?"सही":"Correct"):(lang?"सुधार का अवसर":"Opportunity to improve")}</p><p>{f.explanation[lang]}</p></article>)}</>}
  </section>;
 }
