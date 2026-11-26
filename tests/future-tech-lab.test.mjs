@@ -1,0 +1,4 @@
+import test from "node:test";import assert from "node:assert/strict";import {aiReview,irrigation,dataStorage} from "../lib/future-tech-lab.mjs";
+test("AI sample accuracy has bounded integer inputs",()=>{assert.deepEqual(aiReview(20,4),{correct:16,accuracy:80});assert.equal(aiReview(1,1).accuracy,0);assert.throws(()=>aiReview(20,21),RangeError);assert.throws(()=>aiReview(0,0),RangeError);});
+test("virtual controller is fail-safe regardless of moisture",()=>{for(let m=0;m<=100;m++){assert.equal(irrigation(m,40,false),"review");assert.equal(irrigation(m,40,true),m<40?"water":"hold");}assert.throws(()=>irrigation(0,40,"true"),RangeError);});
+test("storage estimates use decimal MB and safe maximums",()=>{assert.deepEqual(dataStorage(1000,200),{bytes:200000,megabytes:.2});assert.equal(dataStorage(1000000,10000).megabytes,10000);assert.throws(()=>dataStorage(1.5,100),RangeError);});
