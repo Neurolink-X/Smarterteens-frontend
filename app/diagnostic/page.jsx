@@ -11,13 +11,13 @@ export default function Diagnostic(){
  const t=copy[lang];
  async function load(){setError(false);setBusy(true);try{const r=await fetch(path,{cache:"no-store"});if(!r.ok)throw Error();setData(await r.json());setAnswers({});setHints({});setResult(null);}catch{setError(true);}finally{setBusy(false);}}
  useEffect(()=>{void load();},[]);
- async function submit(e){e.preventDefault();if(busy||!data)return;setBusy(true);setError(false);try{const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:data.version,answers})});if(!r.ok)throw Error();setResult(await r.json());}catch{setError(true);}finally{setBusy(false);}}
+ async function submit(e){e?.preventDefault();if(busy||!data||Object.keys(answers).length!==data.items.length)return;setBusy(true);setError(false);try{const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:data.version,answers})});if(!r.ok)throw Error();setResult(await r.json());}catch{setError(true);}finally{setBusy(false);}}
  return <section className="section" lang={lang?"hi":"en"}>
  <div className="actions"><label>{t.language} <select value={lang} onChange={e=>setLang(Number(e.target.value))}><option value={0}>English</option><option value={1}>हिंदी</option></select></label></div>
- <h1>{t.title}</h1><p>{t.intro}</p>{error&&<p role="alert">{t.error} <button onClick={load} disabled={busy}>{t.retry}</button></p>}
+ <h1>{t.title}</h1><p>{t.intro}</p>{error&&<p role="alert">{t.error} <button onClick={data?submit:load} disabled={busy}>{t.retry}</button></p>}
  {!data?<p role="status">{busy?t.loading:""}</p>:!result?<form onSubmit={submit}>
  <p role="status">{Object.keys(answers).length}/{data.items.length} {t.answered}</p>
- {data.items.map((q,i)=><fieldset key={q.id}><legend>{i+1}. {q.question[lang]}</legend>
+ {data.items.map((q,i)=><fieldset key={q.id} disabled={busy}><legend>{i+1}. {q.question[lang]}</legend>
  {q.options.map((o,j)=><label className="option" key={j}><input type="radio" name={q.id} required checked={answers[q.id]===j} onChange={()=>setAnswers(a=>({...a,[q.id]:j}))}/>{o[lang]}</label>)}
  <button type="button" className="secondary" aria-expanded={!!hints[q.id]} onClick={()=>setHints(h=>({...h,[q.id]:!h[q.id]}))}>{t.hint}</button>{hints[q.id]&&<p>{q.hint[lang]}</p>}</fieldset>)}
  <button disabled={busy||Object.keys(answers).length!==data.items.length}>{t.submit}</button></form>:<>
