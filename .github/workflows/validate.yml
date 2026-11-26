@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   public-quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -33,9 +33,9 @@ jobs:
       - run: npm run build
       - name: API integration and security smoke
         run: |
-          npm start -- --hostname localhost --port 3000 > /tmp/smarterteens.log 2>&1 &
+          node node_modules/next/dist/bin/next start --hostname localhost --port 3000 > /tmp/smarterteens.log 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:3000/api/health; then node scripts/smoke.mjs; exit $?; fi
             sleep 1
@@ -47,7 +47,7 @@ jobs:
   authenticated-staging:
     needs: public-quality
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: smarterteens-staging
     steps:
@@ -91,7 +91,7 @@ jobs:
     name: smarterteens-release-gate
     if: always()
     needs: [public-quality, authenticated-staging]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Reject failed, skipped or cancelled validation
