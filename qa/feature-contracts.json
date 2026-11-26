@@ -226,7 +226,7 @@
       "positive": "Owner creates and updates own records, receipts match invoice",
       "negative": "Invalid records, duplicate receipt, stale update, wrong owner and cross-tenant FK denied",
       "integration": "Admissions, learners, attendance, invoices, receipts and summary",
-      "security": "Real two-owner API and direct Data API isolation; no production database",
+      "security": "Actual disposable Supabase Auth and PostgreSQL in CI; direct Data API isolation, no production access",
       "performance": "Bounded queries, no polling, private no-store",
       "files": [
         "app/workspace/page.jsx",
@@ -239,14 +239,16 @@
         "db/bootstrap.sql",
         "db/owner-pilot-admissions.sql",
         "db/staging-qa-marker.sql",
-        "db/owner-pilot-performance.sql"
+        "db/owner-pilot-performance.sql",
+        "lib/server/database-config.mjs"
       ],
       "tests": [
         "tests/workspace.test.mjs",
         "tests/coaching-insights.test.mjs",
         "tests/api-contract.test.mjs",
         "scripts/smoke.mjs",
-        "e2e/staging.spec.mjs"
+        "e2e/staging.spec.mjs",
+        "tests/database-config.test.mjs"
       ],
       "pages": [
         "/workspace"

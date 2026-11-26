@@ -46,25 +46,11 @@ jobs:
       - run: npm run test:browser
   authenticated-staging:
     needs: public-quality
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    environment: smarterteens-staging
+    timeout-minutes: 30
+    env:
+      ST_QA_LOCAL: '1'
     steps:
-      - name: Require dedicated staging configuration
-        env:
-          STAGING_DB_REF: ${{ vars.STAGING_DB_REF }}
-          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
-          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
-          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
-          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
-          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
-        run: |
-          for key in STAGING_DB_REF STAGING_SUPABASE_URL STAGING_SUPABASE_PUBLISHABLE_KEY STAGING_OWNER_A_EMAIL STAGING_OWNER_A_PASSWORD STAGING_OWNER_B_EMAIL STAGING_OWNER_B_PASSWORD; do
-            if [ -z "${!key}" ]; then echo "::error::Missing dedicated staging setting $key"; exit 1; fi
-          done
-          node -e 'const u=new URL(process.env.STAGING_SUPABASE_URL); if(!/^[a-z0-9]{20}$/.test(process.env.STAGING_DB_REF)||u.href!=="https://"+process.env.STAGING_DB_REF+".supabase.co/")process.exit(1)'
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
@@ -75,18 +61,24 @@ jobs:
           if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - name: Real authenticated tenant isolation and owner workflows
+      - name: Start isolated local Supabase
+        run: |
+          command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -y postgresql-client; }
+          npx --yes supabase@2.122.1 init
+          npx --yes supabase@2.122.1 start > /tmp/st-supabase-start.log 2>&1 || { echo "::error::Local Supabase startup failed"; exit 1; }
+          umask 077
+          npx --yes supabase@2.122.1 status -o json > /tmp/st-supabase-status.json
+      - name: Apply migrations and provision two real local owners
+        run: |
+          trap 'rm -f /tmp/st-supabase-status.json /tmp/st-supabase-start.log' EXIT
+          node scripts/seed-ci-db.mjs /tmp/st-supabase-status.json
+      - name: Authenticated browser to real PostgreSQL and direct RLS tests
         run: npm run test:staging
-        env:
-          SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
-          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_DB_REF: ${{ vars.STAGING_DB_REF }}
-          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
-          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
-          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
-          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+      - name: Remove disposable local stack
+        if: always()
+        run: |
+          rm -f /tmp/st-supabase-status.json /tmp/st-supabase-start.log
+          npx --yes supabase@2.122.1 stop --no-backup >/dev/null 2>&1 || true
   release-gate:
     name: smarterteens-release-gate
     if: always()

@@ -1,14 +1,15 @@
 import {test,expect} from "@playwright/test";
 import {randomUUID} from "node:crypto";
+import {databaseOrigin,isLocalQa} from "../lib/server/database-config.mjs";
 const base="http://localhost:3000";
-const required=["STAGING_SUPABASE_URL","STAGING_SUPABASE_PUBLISHABLE_KEY","STAGING_DB_REF","STAGING_OWNER_A_EMAIL","STAGING_OWNER_A_PASSWORD","STAGING_OWNER_B_EMAIL","STAGING_OWNER_B_PASSWORD"];
+const required=["STAGING_SUPABASE_URL","STAGING_SUPABASE_PUBLISHABLE_KEY","STAGING_OWNER_A_EMAIL","STAGING_OWNER_A_PASSWORD","STAGING_OWNER_B_EMAIL","STAGING_OWNER_B_PASSWORD"];
 function config(){
  for(const k of required)if(!process.env[k])throw new Error("Missing isolated staging configuration: "+k);
- const u=new URL(process.env.STAGING_SUPABASE_URL),ref=process.env.STAGING_DB_REF;
- if(!/^[a-z0-9]{20}$/.test(ref)||u.origin!=="https://"+ref+".supabase.co"||u.pathname!=="/"||u.search||u.hash)throw new Error("Staging project identity mismatch");
+ const origin=databaseOrigin(process.env.STAGING_SUPABASE_URL);
+ if(!isLocalQa()&&origin!=="https://"+process.env.STAGING_DB_REF+".supabase.co")throw new Error("Staging project identity mismatch");
  if(process.env.SUPABASE_URL!==process.env.STAGING_SUPABASE_URL||process.env.SUPABASE_PUBLISHABLE_KEY!==process.env.STAGING_SUPABASE_PUBLISHABLE_KEY)throw new Error("Application not configured against isolated staging");
  if(process.env.STAGING_OWNER_A_EMAIL===process.env.STAGING_OWNER_B_EMAIL)throw new Error("Two independent owners required");
- return {url:u.origin,key:process.env.STAGING_SUPABASE_PUBLISHABLE_KEY};
+ return {url:origin,key:process.env.STAGING_SUPABASE_PUBLISHABLE_KEY};
 }
 async function rawAuth(c,email,password){const r=await fetch(c.url+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:c.key,"Content-Type":"application/json"},body:JSON.stringify({email,password}),redirect:"error",signal:AbortSignal.timeout(10000)});expect(r.status,"Direct staging authentication").toBe(200);const s=await r.json();expect(Boolean(s.access_token&&s.user?.email_confirmed_at&&!s.user.is_anonymous)).toBe(true);return s;}
 async function raw(c,token,table,query="",method="GET",body){return fetch(c.url+"/rest/v1/"+table+"?"+query,{method,headers:{apikey:c.key,Authorization:"Bearer "+token,Prefer:"return=representation",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined,redirect:"error",signal:AbortSignal.timeout(10000)});}
