@@ -46,7 +46,8 @@
         "/",
         "/privacy",
         "/legacy/parent"
-      ]
+      ],
+      "apis": []
     },
     {
       "id": "learning",
@@ -92,7 +93,8 @@
         "/course/data",
         "/student",
         "/missions"
-      ]
+      ],
+      "apis": []
     },
     {
       "id": "diagnostic",
