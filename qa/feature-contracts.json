@@ -2,12 +2,12 @@
   "version": 1,
   "roles": {
     "visitor": "Public pages only",
-    "student": "Local learning only; authenticated student is planned",
-    "parent": "Student-controlled printable summary only; verified parent account planned",
-    "teacher": "Public practice tools only; scoped staff account planned",
+    "student": "Public learning plus provisioned read-only linked learner portal",
+    "parent": "Student-controlled local summary plus provisioned read-only approved learner link",
+    "teacher": "Public tools plus assigned-batch read-only portal",
     "owner": "Verified owner pilot, own synthetic institute only",
-    "instituteAdmin": "Planned; no owner permission inherited",
-    "financeStaff": "Planned; no access until scoped role exists",
+    "instituteAdmin": "Provisioned read-only institute operations",
+    "financeStaff": "Provisioned read-only fees and learner codes",
     "platformAdmin": "Planned; no client-side privilege grants",
     "support": "Planned; no automatic data access"
   },
@@ -316,6 +316,42 @@
         "/india-skills"
       ],
       "apis": []
+    },
+    {
+      "id": "coaching-member",
+      "purpose": "Revocable role-scoped member dashboards for institute staff and linked learners",
+      "roles": [
+        "instituteAdmin",
+        "teacher",
+        "financeStaff",
+        "student",
+        "parent"
+      ],
+      "flow": "Verified sign-in → active membership → selected institute → bounded RLS queries → read-only portal",
+      "positive": "Approved membership sees only assigned records and permitted categories",
+      "negative": "Revoked member, foreign tenant, direct insert and privilege escalation denied",
+      "integration": "Existing owner workspace and Auth session",
+      "security": "RLS uses active membership and composite FKs; approved links; no public role assignment; no production test records",
+      "performance": "Bounded 100 recent rows per category, no polling",
+      "files": [
+        "db/coaching-memberships.sql",
+        "lib/coaching-roles.mjs",
+        "app/api/v2/portal/route.ts",
+        "app/portal/page.jsx"
+      ],
+      "tests": [
+        "tests/coaching-roles.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs",
+        "e2e/staging.spec.mjs"
+      ],
+      "pages": [
+        "/portal"
+      ],
+      "apis": [
+        "/api/v2/portal"
+      ],
+      "staging": true
     }
   ]
 }

@@ -56,3 +56,24 @@ test("two actual staging owners: browser → API → DB → UI, tenant and role 
   await p.getByRole("button",{name:"Sign out"}).click();await expect(p.getByRole("button",{name:"Sign in",exact:true})).toBeVisible();expect((await req(p,"GET")).status()).toBe(401);
  }finally{await a.close();await b.close();}
 });
+
+test("assigned member dashboards, direct RLS, revoked and cross-tenant access",async({browser})=>{
+ test.setTimeout(120000);const c=config(),tenant=process.env.STAGING_TENANT_A,foreign=process.env.STAGING_TENANT_B;
+ expect(Boolean(tenant&&foreign&&tenant!==foreign)).toBe(true);
+ for(const [label,kinds,codes] of [["ADMIN",["batch","learner","attendance","admission","invoice","receipt"],["QA-ASSIGNED","QA-UNASSIGNED"]],["TEACHER",["batch","learner","attendance"],["QA-ASSIGNED"]],["FINANCE",["batch","learner","invoice","receipt"],["QA-ASSIGNED","QA-UNASSIGNED"]],["STUDENT",["learner","attendance"],["QA-ASSIGNED"]],["GUARDIAN",["learner","attendance"],["QA-ASSIGNED"]],["REVOKED",[],[]]]){
+ const ctx=await browser.newContext({baseURL:base});try{
+ const email=process.env["STAGING_"+label+"_EMAIL"],password=process.env["STAGING_"+label+"_PASSWORD"];expect(Boolean(email&&password)).toBe(true);
+ const auth=await rawAuth(c,email,password);const page=await ctx.newPage();await page.goto("/portal");await page.getByLabel("Email",{exact:true}).fill(email);await page.getByLabel("Password",{exact:true}).fill(password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await expect(page.getByRole("button",{name:"Sign out"})).toBeVisible();
+ const choices=await page.request.get(base+"/api/v2/portal");expect(choices.status()).toBe(200);
+ const list=(await choices.json()).memberships;expect(list.map(x=>x.institute_id)).toEqual(label==="REVOKED"?[]:[tenant]);
+ expect((await page.request.get(base+"/api/v2/portal?institute="+foreign)).status()).toBe(403);
+ const r=await page.request.get(base+"/api/v2/portal?institute="+tenant);
+ if(label==="REVOKED"){expect(r.status()).toBe(403);await expect(page.getByText("No active memberships.",{exact:false})).toBeVisible();}
+ else{expect(r.status()).toBe(200);const d=await r.json();expect(Object.keys(d.records).sort()).toEqual([...kinds].sort());expect(d.records.learner.map(x=>x.code).filter(x=>codes.includes(x)).sort()).toEqual([...codes].sort());expect(d.records.learner.some(x=>x.code==="QA-FOREIGN")).toBe(false);if(!codes.includes("QA-UNASSIGNED"))expect(d.records.learner.some(x=>x.code==="QA-UNASSIGNED")).toBe(false);await page.getByRole("button",{name:"Open institute"}).click();await expect(page.getByRole("heading",{name:"Learner codes"})).toBeVisible();}
+ const direct=await raw(c,auth.access_token,"st_learners","code=in.(QA-ASSIGNED,QA-UNASSIGNED,QA-FOREIGN)");expect(direct.status).toBe(200);expect((await direct.json()).map(x=>x.code).sort()).toEqual([...codes].sort());
+ const invoice=await raw(c,auth.access_token,"st_invoices","institute_id=eq."+tenant);expect(invoice.status).toBe(200);if(!kinds.includes("invoice"))expect(await invoice.json()).toEqual([]);
+ const write=await raw(c,auth.access_token,"st_batches","","POST",{institute_id:tenant,name:"QA unauthorized"});expect([401,403]).toContain(write.status);
+ const escalate=await raw(c,auth.access_token,"st_memberships","institute_id=eq."+tenant+"&user_id=eq."+auth.user.id,"PATCH",{role:"institute_admin",active:true});expect([401,403]).toContain(escalate.status);
+ }finally{await ctx.close();}
+ }
+});
