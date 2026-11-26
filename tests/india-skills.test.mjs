@@ -1,0 +1,6 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {indiaSkills,evaluateSkill,normalizeSkillChecks,nextSkill} from "../lib/india-skills.mjs";
+import {courses} from "../lib/courses.mjs";
+test("priority foundations precede technology; each scenario has all three locales and valid links",()=>{assert.equal(indiaSkills.length,8);assert.equal(new Set(indiaSkills.map(s=>s.id)).size,8);assert.deepEqual(indiaSkills.map(s=>s.priority),["P0","P0","P0","P0","P1","P1","P1","P1"]);for(const s of indiaSkills){assert.ok(courses.some(c=>c.id===s.course));for(const t of [s.title,s.context,s.question,s.feedback,s.mission,...s.options])assert.ok(t.length===3&&t.every(x=>typeof x==="string"&&x.length>0));assert.equal(evaluateSkill(s.id,s.answer).correct,true);assert.equal(evaluateSkill(s.id,(s.answer+1)%3).correct,false);}});
+test("invalid answers and duplicate progress cannot corrupt recommendations",()=>{for(const x of [-1,3,"1",null,1.2])assert.throws(()=>evaluateSkill("numeracy",x),RangeError);assert.throws(()=>evaluateSkill("unknown",0),RangeError);assert.deepEqual(normalizeSkillChecks(["numeracy","numeracy","invalid"]),["numeracy"]);assert.equal(nextSkill(["numeracy"]),"finance");assert.equal(nextSkill(indiaSkills.map(s=>s.id)),null);});
