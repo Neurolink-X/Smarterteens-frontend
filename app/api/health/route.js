@@ -1,2 +1,0 @@
-export const dynamic="force-dynamic";
-export function GET(){return Response.json({status:"ok",scope:"application process only",database:"not configured",payments:"disabled"},{headers:{"Cache-Control":"no-store"}});}
