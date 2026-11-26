@@ -1,0 +1,6 @@
+"use client";
+import {useState} from "react";
+import Link from "next/link";
+import {usePathname} from "next/navigation";
+const links=[["Courses","/courses"],["Future labs","/labs"],["Future world","/future"],["India skills","/india-skills"],["Practice","/diagnostic"],["Projects","/missions"],["Coaching","/coaching"],["Pricing","/pricing"]];
+export default function Navigation(){const [open,setOpen]=useState(false);const path=usePathname();return <header className="site-header"><Link className="brand" href="/" onClick={()=>setOpen(false)}><span className="brand-mark" aria-hidden="true">S</span>Smarter<span>Teens</span></Link><button type="button" className="menu-toggle secondary" aria-expanded={open} aria-controls="site-navigation" onClick={()=>setOpen(!open)}>{open?"Close":"Menu"}</button><nav id="site-navigation" className={open?"nav-open":""} aria-label="Main navigation">{links.map(([name,url])=><Link key={url} href={url} aria-current={path===url?"page":undefined} onClick={()=>setOpen(false)}>{name}</Link>)}<Link className="nav-cta" href="/student" aria-current={path==="/student"?"page":undefined} onClick={()=>setOpen(false)}>My learning ↗</Link></nav></header>}

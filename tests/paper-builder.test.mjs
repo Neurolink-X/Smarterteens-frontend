@@ -1,0 +1,3 @@
+import test from "node:test";import assert from "node:assert/strict";import {buildPaper} from "../lib/paper-builder.mjs";
+test("paper bank uses real questions, distributes topics and does not duplicate",()=>{const q=buildPaper(["math","money"],5);assert.equal(q.length,5);assert.equal(q[0].topic,"math");assert.equal(q[1].topic,"money");assert.equal(new Set(q.map(x=>x.id)).size,5);assert.ok(q.every(x=>x.options[x.answer]&&x.why));assert.equal(buildPaper(["money"],30).length,3);});
+test("invalid paper settings rejected",()=>{for(const ids of [[],["fake"],["math","math"]])assert.throws(()=>buildPaper(ids,5),RangeError);assert.throws(()=>buildPaper(["math"],100),RangeError);});

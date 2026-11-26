@@ -1,0 +1,4 @@
+import test from "node:test";import assert from "node:assert/strict";import {databaseOrigin,isLocalQa} from "../lib/server/database-config.mjs";
+const ci={CI:"true",ST_QA_LOCAL:"1"};
+test("isolated CI only accepts exact loopback Supabase gateway",()=>{assert.equal(databaseOrigin("http://127.0.0.1:54321",ci),"http://127.0.0.1:54321");for(const u of ["https://hixbvtqjqrbeebutjslq.supabase.co","http://localhost:54321","http://127.0.0.1:54321/evil","http://127.0.0.1:54321?x=1"])assert.throws(()=>databaseOrigin(u,ci));});
+test("deployed runtime cannot activate CI loopback",()=>{for(const env of [{},{...ci,VERCEL:"1"},{...ci,VERCEL_ENV:"production"},{ST_QA_LOCAL:"1"}]){assert.equal(isLocalQa(env),false);assert.throws(()=>databaseOrigin("http://127.0.0.1:54321",env));assert.equal(databaseOrigin("https://hixbvtqjqrbeebutjslq.supabase.co",env),"https://hixbvtqjqrbeebutjslq.supabase.co");}assert.throws(()=>databaseOrigin("https://evil.supabase.co",{}));});

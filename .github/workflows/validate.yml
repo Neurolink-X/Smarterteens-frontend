@@ -1,35 +1,97 @@
-name: Validate rebuild
+name: SmarterTeens quality gates
 on:
   pull_request:
+    branches: [main, master]
   push:
     branches: [main, master]
 permissions:
   contents: read
 concurrency:
-  group: validate-${{ github.ref }}
+  group: smarterteens-qa-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+  public-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
-      - run: |
+      - name: Install dependencies
+        run: |
           if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - name: Feature contract and changed-feature regression evidence
+        run: npm run test:contract
+        env:
+          QA_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: |
-          npm start -- --port 3000 > /tmp/smarterteens.log 2>&1 &
+      - name: API integration and security smoke
+        run: |
+          node node_modules/next/dist/bin/next start --hostname localhost --port 3000 > /tmp/smarterteens.log 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:3000/api/health; then node scripts/smoke.mjs; exit $?; fi
             sleep 1
           done
           cat /tmp/smarterteens.log
           exit 1
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+  authenticated-staging:
+    needs: public-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ST_QA_LOCAL: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start isolated local Supabase
+        run: |
+          command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -y postgresql-client; }
+          npx --yes supabase@2.122.1 init
+          npx --yes supabase@2.122.1 start > /tmp/st-supabase-start.log 2>&1 || { echo "::error::Local Supabase startup failed"; exit 1; }
+          umask 077
+          npx --yes supabase@2.122.1 status -o json > /tmp/st-supabase-status.json
+      - name: Apply migrations and provision two real local owners
+        run: |
+          trap 'rm -f /tmp/st-supabase-status.json /tmp/st-supabase-start.log' EXIT
+          node scripts/seed-ci-db.mjs /tmp/st-supabase-status.json
+      - name: Authenticated browser to real PostgreSQL and direct RLS tests
+        run: npm run test:staging
+      - name: Remove disposable local stack
+        if: always()
+        run: |
+          rm -f /tmp/st-supabase-status.json /tmp/st-supabase-start.log
+          npx --yes supabase@2.122.1 stop --no-backup >/dev/null 2>&1 || true
+  release-gate:
+    name: smarterteens-release-gate
+    if: always()
+    needs: [public-quality, authenticated-staging]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Reject failed, skipped or cancelled validation
+        env:
+          PUBLIC_RESULT: ${{ needs.public-quality.result }}
+          STAGING_RESULT: ${{ needs.authenticated-staging.result }}
+        run: |
+          echo "Public validation: $PUBLIC_RESULT"
+          echo "Authenticated staging: $STAGING_RESULT"
+          test "$PUBLIC_RESULT" = success
+          test "$STAGING_RESULT" = success

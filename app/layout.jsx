@@ -1,3 +1,5 @@
 import "./globals.css";
-export const metadata={title:"SmarterTeens | Learn for life",description:"Practical learning, career exploration and coaching tools.",robots:{index:false,follow:false}};
-export default function Layout({children}){return <html lang="en"><body><a className="skip" href="#main">Skip to content</a><header><a className="brand" href="/">Smarter<span>Teens</span></a><nav aria-label="Main navigation"><a href="/courses">Courses</a><a href="/student">My learning</a><a href="/diagnostic">Practice check</a><a href="/labs">Future labs</a><a href="/coaching">Coaching</a><a href="/pricing">Pricing</a></nav></header><main id="main">{children}</main><footer>SmarterTeens · Learn for exams. Build for life. <a href="/privacy">Privacy & safety</a></footer></body></html>}
+import Navigation from "./navigation";
+import Link from "next/link";
+export const metadata={title:"SmarterTeens | Learn beyond the textbook",description:"Practical learning, real-world projects, career exploration and coaching tools.",robots:{index:false,follow:false}};
+export default function Layout({children}){return <html lang="en"><body><a className="skip" href="#main">Skip to content</a><Navigation/><main id="main">{children}</main><footer className="site-footer"><div><strong>SmarterTeens</strong><p>Learn for exams. Build for life.</p></div><div><Link href="/courses">Explore courses</Link><Link href="/missions">Project studio</Link><Link href="/privacy">Privacy & safety</Link></div></footer></body></html>}

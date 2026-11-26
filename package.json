@@ -10,11 +10,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:contract": "node scripts/feature-gate.mjs",
+    "test:browser": "playwright test --project=desktop --project=mobile",
+    "test:staging": "playwright test --project=staging",
+    "verify:build": "npm run typecheck && npm test && npm run test:contract && npm run build"
   },
   "dependencies": {
     "next": "16.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.19.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@playwright/test": "1.56.1"
   }
 }
