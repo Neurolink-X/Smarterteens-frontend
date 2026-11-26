@@ -37,6 +37,6 @@ export async function PATCH(req:Request):Promise<Response>{if(!sameOrigin(req))r
  const input=record(await readSmallJson(req)),quoteId=validId(input.quote_id);
  if(input.decision!=="approved"&&input.decision!=="rejected")throw new RangeError("Invalid decision");
  const rows=await requestDb("/rest/v1/st_subscription_quotes?select=id&id=eq."+quoteId+"&limit=1",{token});if(!rows[0])throw new ApiError(404,"Quote not found");
- await requestDb("/rest/v1/st_quote_reviews",{token,method:"POST",body:{quote_id:quoteId,reviewer_id:id,decision:input.decision}});
+ await requestDb("/rest/v1/st_quote_reviews?select=quote_id,decision,created_at",{token,method:"POST",representation:true,body:{quote_id:quoteId,reviewer_id:id,decision:input.decision}});
  return reply({recorded:true});
 }catch(e){return handleError(e);}}

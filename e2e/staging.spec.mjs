@@ -102,7 +102,7 @@ test("subscription quotes are immutable, idempotent and separately reviewed",asy
  const reviewerPage=await r.newPage();await reviewerPage.goto("/coaching/subscriptions");await reviewerPage.getByRole("button",{name:"Use existing session"}).click();await expect(reviewerPage.getByRole("heading",{name:"Platform commercial review"})).toBeVisible();
  await reviewerPage.getByRole("button",{name:"Approve quote"}).click();await expect(reviewerPage.getByText("Review recorded.",{exact:true})).toBeVisible();
  expect((await call(r,"PATCH",{quote_id:q.id,decision:"rejected"})).status()).toBe(409);
- const own=(await (await call(a,"GET")).json()).quotes.find(x=>x.id===q.id);expect(own.decision).toBe("approved");
+ const own=(await (await call(a,"GET")).json()).quotes.find(x=>x.id===q.id);expect(own.decision).toBe("approved");expect((await (await call(a,"GET")).json()).summary.approvedQuotePaise).toBe(199800);
  const auth=await rawAuth(c,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD);
  const forged=await raw(c,auth.access_token,"st_subscription_quotes","","POST",{institute_id:q.institute_id,plan_code:"pro",plan_version:1,monthly_paise:1,months:2,request_key:randomUUID()});expect([401,403]).toContain(forged.status);
  const mutate=await raw(c,auth.access_token,"st_subscription_quotes","id=eq."+q.id,"PATCH",{months:12});expect([401,403]).toContain(mutate.status);
