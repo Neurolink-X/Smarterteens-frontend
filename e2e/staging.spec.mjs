@@ -77,3 +77,35 @@ test("assigned member dashboards, direct RLS, revoked and cross-tenant access",a
  }finally{await ctx.close();}
  }
 });
+
+test("teacher attendance insert is batch-scoped and other roles cannot write",async({browser})=>{
+ const c=config(),tenant=process.env.STAGING_TENANT_A;
+ const teacher=await rawAuth(c,process.env.STAGING_TEACHER_EMAIL,process.env.STAGING_TEACHER_PASSWORD);
+ const guardian=await rawAuth(c,process.env.STAGING_GUARDIAN_EMAIL,process.env.STAGING_GUARDIAN_PASSWORD);
+ const ctx=await browser.newContext({baseURL:base});try{const p=await ctx.newPage();await p.goto("/portal");await p.getByLabel("Email",{exact:true}).fill(process.env.STAGING_TEACHER_EMAIL);await p.getByLabel("Password",{exact:true}).fill(process.env.STAGING_TEACHER_PASSWORD);await p.getByRole("button",{name:"Sign in",exact:true}).click();await p.getByRole("button",{name:"Open institute"}).click();
+ await p.getByLabel("Date",{exact:true}).fill("2026-11-27");await p.getByRole("button",{name:"Record attendance"}).click();await expect(p.getByText("Attendance recorded.",{exact:true})).toBeVisible();
+ for(const learner of [process.env.STAGING_UNASSIGNED_LEARNER,process.env.STAGING_FOREIGN_LEARNER]){const r=await raw(c,teacher.access_token,"st_attendance","","POST",{institute_id:tenant,learner_id:learner,day:"2026-11-27",status:"present"});expect([401,403]).toContain(r.status);}
+ const denied=await raw(c,guardian.access_token,"st_attendance","","POST",{institute_id:tenant,learner_id:process.env.STAGING_ASSIGNED_LEARNER,day:"2026-11-28",status:"present"});expect([401,403]).toContain(denied.status);
+ }finally{await ctx.close();}
+});
+test("subscription quotes are immutable, idempotent and separately reviewed",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});
+ const call=(ctx,method,data)=>ctx.request.fetch(base+"/api/v2/subscription",{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,email,password] of [[a,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD],[b,process.env.STAGING_OWNER_B_EMAIL,process.env.STAGING_OWNER_B_PASSWORD],[r,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD]]){expect((await ctx.request.post(base+"/api/v2/session",{headers:{Origin:base},data:{email,password}})).status()).toBe(200);}
+ const request={plan:"pro",months:2,request_key:randomUUID(),monthly_paise:1,institute_id:process.env.STAGING_TENANT_B};
+ const res=await call(a,"POST",request);expect(res.status()).toBe(201);const q=(await res.json()).quote;expect(q.subtotal_paise).toBe(199800);expect(q.institute_id).toBe(process.env.STAGING_TENANT_A);
+ const again=await call(a,"POST",request);expect(again.status()).toBe(200);expect((await again.json()).quote.id).toBe(q.id);
+ expect((await call(a,"POST",{...request,months:3})).status()).toBe(409);
+ expect((await (await call(b,"GET")).json()).quotes.some(x=>x.id===q.id)).toBe(false);
+ expect((await call(a,"PATCH",{quote_id:q.id,decision:"approved"})).status()).toBe(403);
+ const reviewerPage=await r.newPage();await reviewerPage.goto("/coaching/subscriptions");await reviewerPage.getByRole("button",{name:"Use existing session"}).click();await expect(reviewerPage.getByRole("heading",{name:"Platform commercial review"})).toBeVisible();
+ await reviewerPage.getByRole("button",{name:"Approve quote"}).click();await expect(reviewerPage.getByText("Review recorded.",{exact:true})).toBeVisible();
+ expect((await call(r,"PATCH",{quote_id:q.id,decision:"rejected"})).status()).toBe(409);
+ const own=(await (await call(a,"GET")).json()).quotes.find(x=>x.id===q.id);expect(own.decision).toBe("approved");
+ const auth=await rawAuth(c,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD);
+ const forged=await raw(c,auth.access_token,"st_subscription_quotes","","POST",{institute_id:q.institute_id,plan_code:"pro",plan_version:1,monthly_paise:1,months:2,request_key:randomUUID()});expect([401,403]).toContain(forged.status);
+ const mutate=await raw(c,auth.access_token,"st_subscription_quotes","id=eq."+q.id,"PATCH",{months:12});expect([401,403]).toContain(mutate.status);
+ const platform=await rawAuth(c,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD);const learner=await raw(c,platform.access_token,"st_learners");expect(await learner.json()).toEqual([]);
+ }finally{await a.close();await b.close();await r.close();}
+});

@@ -9,3 +9,6 @@ Student cloud progress, role-scoped assessment assignment and server scoring, pa
 Institute verification, moderation, published storefronts and search; platform-admin permission model, audit and operational health, no blanket client privileges. Separate access control tests and reviews.
 ## Release
 Run all existing tests and new real two-tenant authenticated tests. Apply additive SQL only after qualification. Never drop old tables, repositories or production data; retire legacy code only after dependency and migration audits. No paid services. Production cloud parity and backup recovery remain separate checks.
+
+## Phase 2 initial implementation
+Assigned teachers may insert attendance only for their current assigned learners. Subscription quote engine uses DB plan versions, integer paise snapshots, unique request keys and immutable review decisions. Platform commercial reviewers are manually provisioned and have no automatic learner data access. Approval is not payment or activation. Paid checkout, accounting, entitlement enforcement, marketplace moderation, verified portfolios and full super-admin privileges remain separate releases. All new migrations remain unapplied to production until CI passes.

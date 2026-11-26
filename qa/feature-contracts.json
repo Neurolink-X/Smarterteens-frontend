@@ -4,11 +4,11 @@
     "visitor": "Public pages only",
     "student": "Public learning plus provisioned read-only linked learner portal",
     "parent": "Student-controlled local summary plus provisioned read-only approved learner link",
-    "teacher": "Public tools plus assigned-batch read-only portal",
+    "teacher": "Public tools plus assigned-batch read and attendance insertion",
     "owner": "Verified owner pilot, own synthetic institute only",
     "instituteAdmin": "Provisioned read-only institute operations",
     "financeStaff": "Provisioned read-only fees and learner codes",
-    "platformAdmin": "Planned; no client-side privilege grants",
+    "platformAdmin": "Provisioned commercial reviewer only; no learner access or global administrator privileges",
     "support": "Planned; no automatic data access"
   },
   "features": [
@@ -319,7 +319,7 @@
     },
     {
       "id": "coaching-member",
-      "purpose": "Revocable role-scoped member dashboards for institute staff and linked learners",
+      "purpose": "Revocable role-scoped member dashboards for institute staff and linked learners and assigned teacher attendance entry",
       "roles": [
         "instituteAdmin",
         "teacher",
@@ -329,7 +329,7 @@
       ],
       "flow": "Verified sign-in → active membership → selected institute → bounded RLS queries → read-only portal",
       "positive": "Approved membership sees only assigned records and permitted categories",
-      "negative": "Revoked member, foreign tenant, direct insert and privilege escalation denied",
+      "negative": "Revoked member, foreign tenant, direct insert and privilege escalation denied; unassigned attendance write denied",
       "integration": "Existing owner workspace and Auth session",
       "security": "RLS uses active membership and composite FKs; approved links; no public role assignment; no production test records",
       "performance": "Bounded 100 recent rows per category, no polling",
@@ -337,7 +337,8 @@
         "db/coaching-memberships.sql",
         "lib/coaching-roles.mjs",
         "app/api/v2/portal/route.ts",
-        "app/portal/page.jsx"
+        "app/portal/page.jsx",
+        "db/coaching-attendance-write.sql"
       ],
       "tests": [
         "tests/coaching-roles.test.mjs",
@@ -350,6 +351,39 @@
       ],
       "apis": [
         "/api/v2/portal"
+      ],
+      "staging": true
+    },
+    {
+      "id": "subscription-quotes",
+      "purpose": "Immutable indicative subscription quotes and restricted platform review",
+      "roles": [
+        "owner",
+        "platformAdmin"
+      ],
+      "flow": "Verified owner → server plan version → immutable DB quote → reviewer decision → history",
+      "positive": "Correct quote amount and idempotency; one approval or rejection",
+      "negative": "Client price tampering, foreign quote read, duplicate review and nonreviewer approval rejected",
+      "integration": "Existing owner and member sessions, plan pricing, coaching landing",
+      "security": "No payments; RLS and least privilege; separate reviewer, no learner access",
+      "performance": "Bounded latest 100 quotes and one batched review lookup",
+      "files": [
+        "db/coaching-revenue.sql",
+        "lib/subscription.mjs",
+        "app/api/v2/subscription/route.ts",
+        "app/coaching/subscriptions/page.jsx"
+      ],
+      "tests": [
+        "tests/subscription.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/coaching/subscriptions"
+      ],
+      "apis": [
+        "/api/v2/subscription"
       ],
       "staging": true
     }
