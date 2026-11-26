@@ -16,7 +16,7 @@ const req=(page,method,data)=>page.request.fetch(base+"/api/v2/workspace",{metho
 async function save(page,kind,record){const r=await req(page,"POST",{kind,record});expect(r.status(),kind+" create").toBe(201);return (await r.json()).record;}
 async function login(page,email,password){await page.goto("/workspace");await page.getByLabel("Email",{exact:true}).fill(email);await page.getByLabel("Password",{exact:true}).fill(password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await expect(page.getByRole("button",{name:"Sign out"})).toBeVisible({timeout:20000});const r=await req(page,"GET");expect(r.status()).toBe(200);expect(r.headers()["cache-control"]).toContain("no-store");const d=await r.json();expect(Boolean(d.institute?.id),"Preprovisioned synthetic institute").toBe(true);return d;}
 test("two actual staging owners: browser → API → DB → UI, tenant and role boundaries",async({browser})=>{
- test.setTimeout(120000);const c=config();const [a,b]=await Promise.all([browser.newContext(),browser.newContext()]);
+ test.setTimeout(120000);const c=config();const [a,b]=await Promise.all([browser.newContext({baseURL:base}),browser.newContext({baseURL:base})]);
  const emailA=process.env.STAGING_OWNER_A_EMAIL,pwA=process.env.STAGING_OWNER_A_PASSWORD,emailB=process.env.STAGING_OWNER_B_EMAIL,pwB=process.env.STAGING_OWNER_B_PASSWORD;
  const code="QA-"+randomUUID().slice(0,12);
  try{
