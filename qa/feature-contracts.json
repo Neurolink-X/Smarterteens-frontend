@@ -45,7 +45,10 @@
       "pages": [
         "/",
         "/privacy",
-        "/legacy/parent"
+        "/legacy/parent",
+        "/legacy/mentor",
+        "/legacy/admin",
+        "/legacy/auth"
       ],
       "apis": []
     },
@@ -231,7 +234,8 @@
         "lib/coaching-insights.mjs",
         "lib/server/tenant.ts",
         "db/bootstrap.sql",
-        "db/owner-pilot-admissions.sql"
+        "db/owner-pilot-admissions.sql",
+        "db/staging-qa-marker.sql"
       ],
       "tests": [
         "tests/workspace.test.mjs",
