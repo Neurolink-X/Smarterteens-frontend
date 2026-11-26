@@ -56,3 +56,137 @@ test("two actual staging owners: browser → API → DB → UI, tenant and role 
   await p.getByRole("button",{name:"Sign out"}).click();await expect(p.getByRole("button",{name:"Sign in",exact:true})).toBeVisible();expect((await req(p,"GET")).status()).toBe(401);
  }finally{await a.close();await b.close();}
 });
+
+test("assigned member dashboards, direct RLS, revoked and cross-tenant access",async({browser})=>{
+ test.setTimeout(120000);const c=config(),tenant=process.env.STAGING_TENANT_A,foreign=process.env.STAGING_TENANT_B;
+ expect(Boolean(tenant&&foreign&&tenant!==foreign)).toBe(true);
+ for(const [label,kinds,codes] of [["ADMIN",["batch","learner","attendance","admission","invoice","receipt"],["QA-ASSIGNED","QA-UNASSIGNED"]],["TEACHER",["batch","learner","attendance"],["QA-ASSIGNED"]],["FINANCE",["batch","learner","invoice","receipt"],["QA-ASSIGNED","QA-UNASSIGNED"]],["STUDENT",["learner","attendance"],["QA-ASSIGNED"]],["GUARDIAN",["learner","attendance"],["QA-ASSIGNED"]],["REVOKED",[],[]]]){
+ const ctx=await browser.newContext({baseURL:base});try{
+ const email=process.env["STAGING_"+label+"_EMAIL"],password=process.env["STAGING_"+label+"_PASSWORD"];expect(Boolean(email&&password)).toBe(true);
+ const auth=await rawAuth(c,email,password);const page=await ctx.newPage();await page.goto("/portal");await page.getByLabel("Email",{exact:true}).fill(email);await page.getByLabel("Password",{exact:true}).fill(password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await expect(page.getByRole("button",{name:"Sign out"})).toBeVisible();
+ const choices=await page.request.get(base+"/api/v2/portal");expect(choices.status()).toBe(200);
+ const list=(await choices.json()).memberships;expect(list.map(x=>x.institute_id)).toEqual(label==="REVOKED"?[]:[tenant]);
+ expect((await page.request.get(base+"/api/v2/portal?institute="+foreign)).status()).toBe(403);
+ const r=await page.request.get(base+"/api/v2/portal?institute="+tenant);
+ if(label==="REVOKED"){expect(r.status()).toBe(403);await expect(page.getByText("No active memberships.",{exact:false})).toBeVisible();}
+ else{expect(r.status()).toBe(200);const d=await r.json();expect(Object.keys(d.records).sort()).toEqual([...kinds].sort());expect(d.records.learner.map(x=>x.code).filter(x=>codes.includes(x)).sort()).toEqual([...codes].sort());expect(d.records.learner.some(x=>x.code==="QA-FOREIGN")).toBe(false);if(!codes.includes("QA-UNASSIGNED"))expect(d.records.learner.some(x=>x.code==="QA-UNASSIGNED")).toBe(false);await page.getByRole("button",{name:"Open institute"}).click();await expect(page.getByRole("heading",{name:"Learner codes"})).toBeVisible();}
+ const direct=await raw(c,auth.access_token,"st_learners","code=in.(QA-ASSIGNED,QA-UNASSIGNED,QA-FOREIGN)");expect(direct.status).toBe(200);expect((await direct.json()).map(x=>x.code).sort()).toEqual([...codes].sort());
+ const invoice=await raw(c,auth.access_token,"st_invoices","institute_id=eq."+tenant);expect(invoice.status).toBe(200);if(!kinds.includes("invoice"))expect(await invoice.json()).toEqual([]);
+ const write=await raw(c,auth.access_token,"st_batches","","POST",{institute_id:tenant,name:"QA unauthorized"});expect([401,403]).toContain(write.status);
+ const escalate=await raw(c,auth.access_token,"st_memberships","institute_id=eq."+tenant+"&user_id=eq."+auth.user.id,"PATCH",{role:"institute_admin",active:true});expect([401,403]).toContain(escalate.status);
+ }finally{await ctx.close();}
+ }
+});
+
+test("teacher attendance insert is batch-scoped and other roles cannot write",async({browser})=>{
+ const c=config(),tenant=process.env.STAGING_TENANT_A;
+ const teacher=await rawAuth(c,process.env.STAGING_TEACHER_EMAIL,process.env.STAGING_TEACHER_PASSWORD);
+ const guardian=await rawAuth(c,process.env.STAGING_GUARDIAN_EMAIL,process.env.STAGING_GUARDIAN_PASSWORD);
+ const ctx=await browser.newContext({baseURL:base});try{const p=await ctx.newPage();await p.goto("/portal");await p.getByLabel("Email",{exact:true}).fill(process.env.STAGING_TEACHER_EMAIL);await p.getByLabel("Password",{exact:true}).fill(process.env.STAGING_TEACHER_PASSWORD);await p.getByRole("button",{name:"Sign in",exact:true}).click();await p.getByRole("button",{name:"Open institute"}).click();
+ await p.getByLabel("Date",{exact:true}).fill("2026-11-27");await p.getByRole("button",{name:"Record attendance"}).click();await expect(p.getByText("Attendance recorded.",{exact:true})).toBeVisible();
+ for(const learner of [process.env.STAGING_UNASSIGNED_LEARNER,process.env.STAGING_FOREIGN_LEARNER]){const r=await raw(c,teacher.access_token,"st_attendance","","POST",{institute_id:tenant,learner_id:learner,day:"2026-11-27",status:"present"});expect([401,403]).toContain(r.status);}
+ const denied=await raw(c,guardian.access_token,"st_attendance","","POST",{institute_id:tenant,learner_id:process.env.STAGING_ASSIGNED_LEARNER,day:"2026-11-28",status:"present"});expect([401,403]).toContain(denied.status);
+ }finally{await ctx.close();}
+});
+test("subscription quotes are immutable, idempotent and separately reviewed",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});
+ const call=(ctx,method,data)=>ctx.request.fetch(base+"/api/v2/subscription",{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,email,password] of [[a,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD],[b,process.env.STAGING_OWNER_B_EMAIL,process.env.STAGING_OWNER_B_PASSWORD],[r,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD]]){expect((await ctx.request.post(base+"/api/v2/session",{headers:{Origin:base},data:{email,password}})).status()).toBe(200);}
+ const request={plan:"pro",months:2,request_key:randomUUID(),monthly_paise:1,institute_id:process.env.STAGING_TENANT_B};
+ const res=await call(a,"POST",request);expect(res.status()).toBe(201);const q=(await res.json()).quote;expect(q.subtotal_paise).toBe(199800);expect(q.institute_id).toBe(process.env.STAGING_TENANT_A);
+ const again=await call(a,"POST",request);expect(again.status()).toBe(200);expect((await again.json()).quote.id).toBe(q.id);
+ expect((await call(a,"POST",{...request,months:3})).status()).toBe(409);
+ expect((await (await call(b,"GET")).json()).quotes.some(x=>x.id===q.id)).toBe(false);
+ expect((await call(a,"PATCH",{quote_id:q.id,decision:"approved"})).status()).toBe(403);
+ const reviewerPage=await r.newPage();await reviewerPage.goto("/coaching/subscriptions");await reviewerPage.getByRole("button",{name:"Use existing session"}).click();await expect(reviewerPage.getByRole("heading",{name:"Platform commercial review"})).toBeVisible();
+ await reviewerPage.getByRole("button",{name:"Approve quote"}).click();await expect(reviewerPage.getByText("Review recorded.",{exact:true})).toBeVisible();
+ expect((await call(r,"PATCH",{quote_id:q.id,decision:"rejected"})).status()).toBe(409);
+ const own=(await (await call(a,"GET")).json()).quotes.find(x=>x.id===q.id);expect(own.decision).toBe("approved");expect((await (await call(a,"GET")).json()).summary.approvedQuotePaise).toBe(199800);
+ const auth=await rawAuth(c,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD);
+ const forged=await raw(c,auth.access_token,"st_subscription_quotes","","POST",{institute_id:q.institute_id,plan_code:"pro",plan_version:1,monthly_paise:1,months:2,request_key:randomUUID()});expect([401,403]).toContain(forged.status);
+ const mutate=await raw(c,auth.access_token,"st_subscription_quotes","id=eq."+q.id,"PATCH",{months:12});expect([401,403]).toContain(mutate.status);
+ const platform=await rawAuth(c,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD);const learner=await raw(c,platform.access_token,"st_learners");expect(await learner.json()).toEqual([]);
+ }finally{await a.close();await b.close();await r.close();}
+});
+
+test("manual UPI approval, bank confirmation, tenant and replay protection",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,email,password] of [[a,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD],[b,process.env.STAGING_OWNER_B_EMAIL,process.env.STAGING_OWNER_B_PASSWORD],[r,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD]])expect((await call(ctx,"/api/v2/session","POST",{email,password})).status()).toBe(200);
+ const q=(await (await call(a,"/api/v2/subscription","POST",{plan:"starter",months:1,request_key:randomUUID()})).json()).quote;
+ const path="/api/v2/manual-upi?quote="+q.id;
+ const mutate=(ctx,method,data)=>call(ctx,path,method,{quote_id:q.id,...data});
+ expect((await call(a,path,"GET")).status()).toBe(409);
+ expect((await call(r,"/api/v2/subscription","PATCH",{quote_id:q.id,decision:"approved"})).status()).toBe(200);
+ expect((await call(b,path,"GET")).status()).toBe(404);
+ expect((await mutate(a,"POST",{action:"request",confirmed:true,amount_paise:49900})).status()).toBe(403);
+ expect((await mutate(r,"POST",{action:"request",confirmed:true,amount_paise:49900})).status()).toBe(201);
+ const before=await (await call(a,path,"GET")).json();expect(before.instructions.vpa).toBe("synthetic@invalid");expect(before.verified).toBe(false);
+ const claim=await mutate(a,"POST",{action:"claim",rrn:"012345678901"});expect(claim.status()).toBe(201);const id=(await claim.json()).claim.id;
+ expect((await mutate(a,"POST",{action:"claim",rrn:"012345678901"})).status()).toBe(200);
+ expect((await mutate(a,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(403);
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified"})).status()).toBe(400);
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(200);
+ const after=await (await call(a,path,"GET")).json();expect(after.verified).toBe(true);expect(after.instructions).toBeNull();expect(after.claims[0].decision).toBe("verified");
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(409);
+ const auth=await rawAuth(c,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD);
+ const forged=await raw(c,auth.access_token,"st_upi_decisions","","POST",{claim_id:id,payment_id:before.payment.id,rrn:"012345678901",reviewer_id:auth.user.id,decision:"verified"});expect([401,403]).toContain(forged.status);
+ }finally{await a.close();await b.close();await r.close();}
+});
+
+test("private cloud practice merges devices and rejects other accounts",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base});const path="/api/v2/learning/cloud";
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[a,"STUDENT"],[b,"GUARDIAN"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ expect((await call(b,path,"GET")).status()).toBe(403);
+ const x=await call(a,path,"POST",{progress:{money:["cost"]}});expect(x.status()).toBe(201);
+ expect((await call(a,path,"POST",{progress:{money:["cash","invalid"]}})).status()).toBe(200);
+ const saved=await (await call(a,path,"GET")).json();expect(saved.progress.money).toEqual(["cost","cash"]);
+ const guardian=await rawAuth(c,process.env.STAGING_GUARDIAN_EMAIL,process.env.STAGING_GUARDIAN_PASSWORD);expect(await (await raw(c,guardian.access_token,"st_cloud_progress")).json()).toEqual([]);
+ const page=await a.newPage();await page.goto("/student/cloud");await page.getByRole("button",{name:"Load cloud progress"}).click();await expect(page.getByText("2 saved practice checks",{exact:true})).toBeVisible();
+ expect((await call(a,path,"DELETE",{revision:saved.revision-1})).status()).toBe(409);
+ expect((await call(a,path,"DELETE",{revision:saved.revision})).status()).toBe(200);expect((await (await call(a,path,"GET")).json()).revision).toBe(0);
+ }finally{await a.close();await b.close();}
+});
+test("marketplace review gate and withdrawal with independent moderator",async({browser})=>{
+ const a=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});const path="/api/v2/marketplace";
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[a,"OWNER_A"],[r,"REVIEWER"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ const res=await call(a,path,"POST",{display_name:"QA reviewed institute",city:"Kanpur",subject:"school",description:"Synthetic listing for review.",status:"published"});expect(res.status()).toBe(201);const id=(await res.json()).listing.id;
+ const visible=async()=> (await (await call(a,path,"GET")).json()).listings.some(x=>x.id===id);
+ expect(await visible()).toBe(false);expect((await call(a,path,"PATCH",{listing_id:id,status:"published",verified_identity:true,verified_details:true})).status()).toBe(403);
+ expect((await call(r,path,"PATCH",{listing_id:id,status:"published",verified_identity:true})).status()).toBe(400);
+ const p=await r.newPage();await p.goto("/admin/control");await p.getByRole("button",{name:"Load authorized workspace"}).click();const item=p.locator("article.lesson-example").filter({hasText:"QA reviewed institute"});await item.getByLabel("I independently verified institute identity.").check();await item.getByLabel("I checked public details and supporting evidence.").check();await item.getByRole("button",{name:"Publish listing"}).click();await expect(p.getByText("Listing published.",{exact:true})).toBeVisible();
+ expect(await visible()).toBe(true);
+ await item.getByRole("button",{name:"Withdraw listing"}).click();await expect(p.getByText("Listing withdrawn.",{exact:true})).toBeVisible();expect(await visible()).toBe(false);
+ }finally{await a.close();await r.close();}
+});
+
+test("platform governance: exact totals, restricted directory, suspension and immutable audit",async({browser})=>{
+ const c=config(),ops=await browser.newContext({baseURL:base}),owner=await browser.newContext({baseURL:base}),teacher=await browser.newContext({baseURL:base});
+ const call=(ctx,path,method="GET",data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[ops,"OPS"],[owner,"OWNER_A"],[teacher,"TEACHER"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ const path="/api/v2/admin";
+ expect([401,403]).toContain((await call(owner,path+"?mode=users")).status());
+ const r=await call(ops,path+"?mode=overview");expect(r.status()).toBe(200);const {overview}=await r.json();expect(overview.institutes).toBe(2);expect(overview.accounts).toBeGreaterThanOrEqual(10);expect(overview.verifiedPlatformPaymentPaise).toBeGreaterThanOrEqual(49900);
+ const userList=await call(ops,path+"?mode=users&search=qa-teacher");expect(userList.status()).toBe(200);const target=(await userList.json()).users[0];expect(target.email).toBe(process.env.STAGING_TEACHER_EMAIL);expect(target.suspended).toBe(false);
+ const auth=await rawAuth(c,process.env.STAGING_TEACHER_EMAIL,process.env.STAGING_TEACHER_PASSWORD);
+ const req={target:target.id,expected:target.revision,desired:true,reason_code:"security"};
+ expect([401,403]).toContain((await call(owner,path,"PATCH",req)).status());
+ expect((await call(ops,path,"PATCH",req)).status()).toBe(200);
+ expect((await call(teacher,"/api/v2/portal")).status()).toBe(403);
+ const direct=await raw(c,auth.access_token,"st_learners","code=eq.QA-ASSIGNED");expect(direct.status).toBe(200);expect(await direct.json()).toEqual([]);
+ expect((await call(ops,path,"PATCH",req)).status()).toBe(409);
+ const restored=await call(ops,path,"PATCH",{target:target.id,expected:target.revision+1,desired:false,reason_code:"resolved"});expect(restored.status()).toBe(200);
+ expect((await call(teacher,"/api/v2/portal")).status()).toBe(200);
+ const audit=await (await call(ops,path+"?mode=audit")).json();expect(audit.events.filter(e=>e.target_id===target.id).map(e=>e.suspended)).toEqual([false,true]);
+ const ownAdmin=(await (await call(ops,path+"?mode=users&search=qa-ops")).json()).users[0];expect(ownAdmin.protected).toBe(true);expect([401,403]).toContain((await call(ops,path,"PATCH",{target:ownAdmin.id,expected:0,desired:true,reason_code:"security"})).status());
+ const p=await ops.newPage();await p.goto("/admin/operations");await p.getByRole("button",{name:"Load platform analytics"}).click();await expect(p.getByRole("heading",{name:"Registered accounts"})).toBeVisible();
+ await p.getByRole("button",{name:"System health"}).click();await p.getByRole("button",{name:"Run health check"}).click();await expect(p.getByRole("heading",{name:"Ready",exact:true})).toBeVisible();
+ }finally{await ops.close();await owner.close();await teacher.close();}
+});

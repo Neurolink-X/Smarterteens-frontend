@@ -2,13 +2,13 @@
   "version": 1,
   "roles": {
     "visitor": "Public pages only",
-    "student": "Local learning only; authenticated student is planned",
-    "parent": "Student-controlled printable summary only; verified parent account planned",
-    "teacher": "Public practice tools only; scoped staff account planned",
+    "student": "Public learning plus provisioned read-only linked learner portal",
+    "parent": "Student-controlled local summary plus provisioned read-only approved learner link",
+    "teacher": "Public tools plus assigned-batch read and attendance insertion",
     "owner": "Verified owner pilot, own synthetic institute only",
-    "instituteAdmin": "Planned; no owner permission inherited",
-    "financeStaff": "Planned; no access until scoped role exists",
-    "platformAdmin": "Planned; no client-side privilege grants",
+    "instituteAdmin": "Provisioned read-only institute operations",
+    "financeStaff": "Provisioned read-only fees and learner codes",
+    "platformAdmin": "Separately provisioned platform operator, commercial reviewer or marketplace moderator; no implicit cross-role grants",
     "support": "Planned; no automatic data access"
   },
   "features": [
@@ -116,16 +116,20 @@
       "files": [
         "app/diagnostic/page.jsx",
         "app/api/v2/learning/diagnostic/route.ts",
-        "lib/diagnostic.mjs"
+        "lib/diagnostic.mjs",
+        "lib/adaptive-assessment.mjs",
+        "app/assessment-studio/page.jsx"
       ],
       "tests": [
         "tests/diagnostic.test.mjs",
         "tests/roadmap.test.mjs",
         "scripts/smoke.mjs",
-        "e2e/public.spec.mjs"
+        "e2e/public.spec.mjs",
+        "tests/cloud-assessment.test.mjs"
       ],
       "pages": [
-        "/diagnostic"
+        "/diagnostic",
+        "/assessment-studio"
       ],
       "apis": [
         "/api/v2/learning/diagnostic"
@@ -316,6 +320,185 @@
         "/india-skills"
       ],
       "apis": []
+    },
+    {
+      "id": "coaching-member",
+      "purpose": "Revocable role-scoped member dashboards for institute staff and linked learners and assigned teacher attendance entry",
+      "roles": [
+        "instituteAdmin",
+        "teacher",
+        "financeStaff",
+        "student",
+        "parent"
+      ],
+      "flow": "Verified sign-in → active membership → selected institute → bounded RLS queries → read-only portal",
+      "positive": "Approved membership sees only assigned records and permitted categories",
+      "negative": "Revoked member, foreign tenant, direct insert and privilege escalation denied; unassigned attendance write denied",
+      "integration": "Existing owner workspace and Auth session",
+      "security": "RLS uses active membership and composite FKs; approved links; no public role assignment; no production test records",
+      "performance": "Bounded 100 recent rows per category, no polling",
+      "files": [
+        "db/coaching-memberships.sql",
+        "lib/coaching-roles.mjs",
+        "app/api/v2/portal/route.ts",
+        "app/portal/page.jsx",
+        "db/coaching-attendance-write.sql"
+      ],
+      "tests": [
+        "tests/coaching-roles.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs",
+        "e2e/staging.spec.mjs"
+      ],
+      "pages": [
+        "/portal"
+      ],
+      "apis": [
+        "/api/v2/portal"
+      ],
+      "staging": true
+    },
+    {
+      "id": "subscription-quotes",
+      "purpose": "Immutable indicative subscription quotes and restricted platform review",
+      "roles": [
+        "owner",
+        "platformAdmin"
+      ],
+      "flow": "Verified owner → server plan version → immutable DB quote → reviewer decision → history",
+      "positive": "Correct quote amount and idempotency; one approval or rejection",
+      "negative": "Client price tampering, foreign quote read, duplicate review and nonreviewer approval rejected",
+      "integration": "Existing owner and member sessions, plan pricing, coaching landing",
+      "security": "No payments; RLS and least privilege; separate reviewer, no learner access; manual UPI instructions restricted to approved owner; immutable bank verification records, no automatic activation",
+      "performance": "Bounded latest 100 quotes and one batched review lookup",
+      "files": [
+        "db/coaching-revenue.sql",
+        "lib/subscription.mjs",
+        "app/api/v2/subscription/route.ts",
+        "app/coaching/subscriptions/page.jsx",
+        "db/manual-upi.sql",
+        "lib/manual-upi.mjs",
+        "app/api/v2/manual-upi/route.ts",
+        "app/coaching/subscriptions/manual-upi.jsx"
+      ],
+      "tests": [
+        "tests/subscription.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs",
+        "tests/manual-upi.test.mjs"
+      ],
+      "pages": [
+        "/coaching/subscriptions"
+      ],
+      "apis": [
+        "/api/v2/subscription",
+        "/api/v2/manual-upi"
+      ],
+      "staging": true
+    },
+    {
+      "id": "cloud-practice",
+      "purpose": "Private invite-only practice sync with explicit opt-in and revision checks",
+      "roles": [
+        "student"
+      ],
+      "flow": "Local checks → explicit sync → validated union → RLS persisted → restore or clear",
+      "positive": "Merge different device checks; read persisted cloud history",
+      "negative": "Unprovisioned account and stale deletion denied",
+      "integration": "Existing curriculum and session API",
+      "security": "Private self-only rows; self-reported practice, not grades; no real minor data in pilot",
+      "performance": "One bounded snapshot per account",
+      "files": [
+        "db/learning-cloud.sql",
+        "lib/cloud-progress.mjs",
+        "app/api/v2/learning/cloud/route.ts",
+        "app/student/cloud/page.jsx"
+      ],
+      "tests": [
+        "tests/cloud-assessment.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/student/cloud"
+      ],
+      "apis": [
+        "/api/v2/learning/cloud"
+      ],
+      "staging": true
+    },
+    {
+      "id": "reviewed-marketplace",
+      "purpose": "Independent moderation and public coaching directory",
+      "roles": [
+        "visitor",
+        "owner",
+        "platformAdmin"
+      ],
+      "flow": "Owner submits → moderator checks → publish → public read → withdraw",
+      "positive": "Only published approved snapshots visible",
+      "negative": "Owner approval, missing verification and unpublished public read denied",
+      "integration": "Control center, commercial review and coaching landing",
+      "security": "Separate provisioned moderator; no learner access; public columns only",
+      "performance": "Bounded listing and batched reviews",
+      "files": [
+        "db/coaching-marketplace.sql",
+        "lib/marketplace.mjs",
+        "app/api/v2/marketplace/route.ts",
+        "app/marketplace/page.jsx",
+        "app/admin/control/page.jsx"
+      ],
+      "tests": [
+        "tests/marketplace.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/marketplace",
+        "/admin/control"
+      ],
+      "apis": [
+        "/api/v2/marketplace"
+      ],
+      "staging": true
+    },
+    {
+      "id": "platform-governance",
+      "purpose": "Account directory, revocable application access, exact operational totals, audit and readiness",
+      "roles": [
+        "platformAdmin"
+      ],
+      "flow": "Verified admin → checked RPC → atomic state and audit → RLS enforcement → updated dashboard",
+      "positive": "Scoped directory, correct totals, suspend and restore without deleting data",
+      "negative": "Unauthorized admin calls, stale update and self-suspension denied; existing token cannot read suspended data",
+      "integration": "Existing auth, tenant tables, commercial reviews, marketplace and cloud progress",
+      "security": "Private definer functions with fixed search_path and explicit admin checks; restrictive RLS, no service key or public PII",
+      "performance": "50-account keyset pages, bounded audit and on-demand aggregate/readiness queries",
+      "files": [
+        "db/platform-governance.sql",
+        "lib/admin-governance.mjs",
+        "app/api/v2/admin/route.ts",
+        "app/api/ready/route.ts",
+        "app/admin/operations/page.jsx"
+      ],
+      "tests": [
+        "tests/admin-governance.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs",
+        "tests/monitor-readiness.test.mjs"
+      ],
+      "pages": [
+        "/admin/operations"
+      ],
+      "apis": [
+        "/api/v2/admin",
+        "/api/ready"
+      ],
+      "staging": true
     }
   ]
 }

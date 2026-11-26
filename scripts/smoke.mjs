@@ -16,4 +16,11 @@ assert.equal((await post("/api/v2/learning/diagnostic",{version:exercise.version
 assert.equal((await fetch(base+"/api/v2/workspace")).status,401);
 assert.equal((await fetch(base+"/api/v2/session")).status,401);
 assert.equal((await post("/api/v2/workspace",{kind:"batch",record:{name:"Example"}})).status,403);
+assert.equal((await fetch(base+"/api/v2/portal")).status,401);
+assert.equal((await fetch(base+"/api/v2/subscription")).status,401);
+assert.equal((await fetch(base+"/api/v2/manual-upi")).status,401);
+assert.equal((await fetch(base+"/api/v2/learning/cloud")).status,401);
+assert.equal((await fetch(base+"/api/v2/marketplace?mode=manage")).status,401);
+assert.equal((await fetch(base+"/api/v2/admin")).status,401);
+const ready=await fetch(base+"/api/ready");assert.equal(ready.status,503);assert.equal((await ready.json()).status,"unavailable");
 console.log("HTTP smoke checks passed");
