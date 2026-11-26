@@ -109,3 +109,29 @@ test("subscription quotes are immutable, idempotent and separately reviewed",asy
  const platform=await rawAuth(c,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD);const learner=await raw(c,platform.access_token,"st_learners");expect(await learner.json()).toEqual([]);
  }finally{await a.close();await b.close();await r.close();}
 });
+
+test("manual UPI approval, bank confirmation, tenant and replay protection",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,email,password] of [[a,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD],[b,process.env.STAGING_OWNER_B_EMAIL,process.env.STAGING_OWNER_B_PASSWORD],[r,process.env.STAGING_REVIEWER_EMAIL,process.env.STAGING_REVIEWER_PASSWORD]])expect((await call(ctx,"/api/v2/session","POST",{email,password})).status()).toBe(200);
+ const q=(await (await call(a,"/api/v2/subscription","POST",{plan:"starter",months:1,request_key:randomUUID()})).json()).quote;
+ const path="/api/v2/manual-upi?quote="+q.id;
+ const mutate=(ctx,method,data)=>call(ctx,path,method,{quote_id:q.id,...data});
+ expect((await call(a,path,"GET")).status()).toBe(409);
+ expect((await call(r,"/api/v2/subscription","PATCH",{quote_id:q.id,decision:"approved"})).status()).toBe(200);
+ expect((await call(b,path,"GET")).status()).toBe(404);
+ expect((await mutate(a,"POST",{action:"request",confirmed:true,amount_paise:49900})).status()).toBe(403);
+ expect((await mutate(r,"POST",{action:"request",confirmed:true,amount_paise:49900})).status()).toBe(201);
+ const before=await (await call(a,path,"GET")).json();expect(before.instructions.vpa).toBe("synthetic@invalid");expect(before.verified).toBe(false);
+ const claim=await mutate(a,"POST",{action:"claim",rrn:"012345678901"});expect(claim.status()).toBe(201);const id=(await claim.json()).claim.id;
+ expect((await mutate(a,"POST",{action:"claim",rrn:"012345678901"})).status()).toBe(200);
+ expect((await mutate(a,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(403);
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified"})).status()).toBe(400);
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(200);
+ const after=await (await call(a,path,"GET")).json();expect(after.verified).toBe(true);expect(after.instructions).toBeNull();expect(after.claims[0].decision).toBe("verified");
+ expect((await mutate(r,"PATCH",{claim_id:id,decision:"verified",bank_confirmed:true})).status()).toBe(409);
+ const auth=await rawAuth(c,process.env.STAGING_OWNER_A_EMAIL,process.env.STAGING_OWNER_A_PASSWORD);
+ const forged=await raw(c,auth.access_token,"st_upi_decisions","","POST",{claim_id:id,payment_id:before.payment.id,rrn:"012345678901",reviewer_id:auth.user.id,decision:"verified"});expect([401,403]).toContain(forged.status);
+ }finally{await a.close();await b.close();await r.close();}
+});

@@ -12,7 +12,7 @@ const key=status.ANON_KEY||status.PUBLISHABLE_KEY;
 const admin=status.SERVICE_ROLE_KEY||status.SECRET_KEY;
 if(!key||!admin)throw Error("Local auth keys missing");
 for(const secret of [key,admin,db.password])if(secret)console.log("::add-mask::"+secret);
-for(const name of ["bootstrap","owner-pilot-admissions","owner-pilot-performance","coaching-memberships","coaching-attendance-write","coaching-revenue","staging-qa-marker"]){
+for(const name of ["bootstrap","owner-pilot-admissions","owner-pilot-performance","coaching-memberships","coaching-attendance-write","coaching-revenue","manual-upi","staging-qa-marker"]){
  execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-f","db/"+name+".sql"],{stdio:["ignore","ignore","pipe"]});
 }
 async function call(path,body,apiKey,token){
@@ -62,6 +62,9 @@ console.log("::add-mask::"+reviewPassword);
 const reviewer=await call("/auth/v1/admin/users",{email:reviewEmail,password:reviewPassword,email_confirm:true},admin,admin.startsWith("eyJ")?admin:undefined);
 execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-c","insert into public.st_platform_reviewers(user_id,active) values("+uuid(reviewer.id)+",true);"],{stdio:["ignore","ignore","pipe"]});
 values.STAGING_REVIEWER_EMAIL=reviewEmail;values.STAGING_REVIEWER_PASSWORD=reviewPassword;values.STAGING_ASSIGNED_LEARNER=l.id;values.STAGING_UNASSIGNED_LEARNER=m.id;values.STAGING_FOREIGN_LEARNER=n.id;
+values.ST_UPI_ENABLED="true";
+// Test-only image is deliberately not a scannable payment QR; never use a real VPA here.
+values.ST_UPI_CONFIG=JSON.stringify({payee:"Synthetic QA only",vpa:"synthetic@invalid",qr:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=="+"A".repeat(20)});
 values.STAGING_TENANT_A=tenantA;values.STAGING_TENANT_B=tenantB;
 appendFileSync(process.env.GITHUB_ENV,Object.entries(values).map(([k,v])=>k+"="+v+"\n").join(""));
 console.log("Isolated real Postgres/Auth fixtures provisioned; no hosted access.");

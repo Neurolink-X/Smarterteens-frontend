@@ -365,25 +365,31 @@
       "positive": "Correct quote amount and idempotency; one approval or rejection",
       "negative": "Client price tampering, foreign quote read, duplicate review and nonreviewer approval rejected",
       "integration": "Existing owner and member sessions, plan pricing, coaching landing",
-      "security": "No payments; RLS and least privilege; separate reviewer, no learner access",
+      "security": "No payments; RLS and least privilege; separate reviewer, no learner access; manual UPI instructions restricted to approved owner; immutable bank verification records, no automatic activation",
       "performance": "Bounded latest 100 quotes and one batched review lookup",
       "files": [
         "db/coaching-revenue.sql",
         "lib/subscription.mjs",
         "app/api/v2/subscription/route.ts",
-        "app/coaching/subscriptions/page.jsx"
+        "app/coaching/subscriptions/page.jsx",
+        "db/manual-upi.sql",
+        "lib/manual-upi.mjs",
+        "app/api/v2/manual-upi/route.ts",
+        "app/coaching/subscriptions/manual-upi.jsx"
       ],
       "tests": [
         "tests/subscription.test.mjs",
         "e2e/staging.spec.mjs",
         "e2e/public.spec.mjs",
-        "scripts/smoke.mjs"
+        "scripts/smoke.mjs",
+        "tests/manual-upi.test.mjs"
       ],
       "pages": [
         "/coaching/subscriptions"
       ],
       "apis": [
-        "/api/v2/subscription"
+        "/api/v2/subscription",
+        "/api/v2/manual-upi"
       ],
       "staging": true
     }

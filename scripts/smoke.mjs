@@ -18,4 +18,5 @@ assert.equal((await fetch(base+"/api/v2/session")).status,401);
 assert.equal((await post("/api/v2/workspace",{kind:"batch",record:{name:"Example"}})).status,403);
 assert.equal((await fetch(base+"/api/v2/portal")).status,401);
 assert.equal((await fetch(base+"/api/v2/subscription")).status,401);
+assert.equal((await fetch(base+"/api/v2/manual-upi")).status,401);
 console.log("HTTP smoke checks passed");
