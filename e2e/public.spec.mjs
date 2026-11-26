@@ -1,6 +1,7 @@
 import {test,expect} from "@playwright/test";
 import fs from "node:fs";
 import {items} from "../lib/diagnostic.mjs";
+import {courses} from "../lib/courses.mjs";
 const registry=JSON.parse(fs.readFileSync("qa/feature-contracts.json","utf8"));
 const pages=[...new Set(registry.features.flatMap(f=>f.pages))].filter(p=>p!=="/workspace");
 const errors=new WeakMap();
@@ -18,7 +19,7 @@ test("navigation opens correct page and mobile menu closes",async({page,isMobile
  const search=page.getByRole("searchbox").or(page.locator('input[type="search"]'));await search.fill("does-not-exist-987");await expect(page.getByText("No matching pathways")).toBeVisible();await page.getByRole("button",{name:"Clear filters"}).click();await expect(page.getByText("Money and entrepreneurship",{exact:true})).toBeVisible();
 });
 test("wrong answer does not count; correct answer survives reload and appears in family summary",async({page})=>{
- await page.goto("/course/money");const radios=page.getByRole("radio");const check=page.getByRole("button",{name:"Check answer"});await radios.nth(0).check();await check.click();await expect(page.getByRole("status")).toContainText("Try again");await expect(page.getByText("0 of 3 checks completed")).toBeVisible();await radios.nth(1).check();await check.click();await expect(page.getByRole("status")).toContainText("Correct");await expect(page.getByText("1 of 3 checks completed")).toBeVisible();await page.reload();await expect(page.getByText("1 of 3 checks completed")).toBeVisible();await page.goto("/student");await expect(page.getByText("1/33 completed checks")).toBeVisible();await page.getByLabel("Interest").selectOption("business");await expect(page.getByText("Plan a pretend shop",{exact:false})).toBeVisible();await page.reload();await expect(page.getByLabel("Interest")).toHaveValue("business");
+ await page.goto("/course/money");const radios=page.getByRole("radio");const check=page.getByRole("button",{name:"Check answer"});await radios.nth(0).check();await check.click();await expect(page.getByRole("status")).toContainText("Try again");await expect(page.getByText("0 of 3 checks completed")).toBeVisible();await radios.nth(1).check();await check.click();await expect(page.getByRole("status")).toContainText("Correct");await expect(page.getByText("1 of 3 checks completed")).toBeVisible();await page.reload();await expect(page.getByText("1 of 3 checks completed")).toBeVisible();await page.goto("/student");await expect(page.getByText("1/"+courses.reduce((n,c)=>n+c.lessons.length,0)+" completed checks")).toBeVisible();await page.getByLabel("Interest").selectOption("business");await expect(page.getByText("Plan a pretend shop",{exact:false})).toBeVisible();await page.reload();await expect(page.getByLabel("Interest")).toHaveValue("business");
 });
 test("diagnostic real API, language switch, results and next steps",async({page})=>{
  let gets=0,posts=0;page.on("request",r=>{if(r.url().endsWith("/api/v2/learning/diagnostic"))r.method()==="GET"?gets++:posts++;});
