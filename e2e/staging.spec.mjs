@@ -135,3 +135,33 @@ test("manual UPI approval, bank confirmation, tenant and replay protection",asyn
  const forged=await raw(c,auth.access_token,"st_upi_decisions","","POST",{claim_id:id,payment_id:before.payment.id,rrn:"012345678901",reviewer_id:auth.user.id,decision:"verified"});expect([401,403]).toContain(forged.status);
  }finally{await a.close();await b.close();await r.close();}
 });
+
+test("private cloud practice merges devices and rejects other accounts",async({browser})=>{
+ const c=config(),a=await browser.newContext({baseURL:base}),b=await browser.newContext({baseURL:base});const path="/api/v2/learning/cloud";
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[a,"STUDENT"],[b,"GUARDIAN"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ expect((await call(b,path,"GET")).status()).toBe(403);
+ const x=await call(a,path,"POST",{progress:{money:["cost"]}});expect(x.status()).toBe(201);
+ expect((await call(a,path,"POST",{progress:{money:["cash","invalid"]}})).status()).toBe(200);
+ const saved=await (await call(a,path,"GET")).json();expect(saved.progress.money).toEqual(["cost","cash"]);
+ const guardian=await rawAuth(c,process.env.STAGING_GUARDIAN_EMAIL,process.env.STAGING_GUARDIAN_PASSWORD);expect(await (await raw(c,guardian.access_token,"st_cloud_progress")).json()).toEqual([]);
+ const page=await a.newPage();await page.goto("/student/cloud");await page.getByRole("button",{name:"Load cloud progress"}).click();await expect(page.getByText("2 saved practice checks",{exact:true})).toBeVisible();
+ expect((await call(a,path,"DELETE",{revision:saved.revision-1})).status()).toBe(409);
+ expect((await call(a,path,"DELETE",{revision:saved.revision})).status()).toBe(200);expect((await (await call(a,path,"GET")).json()).revision).toBe(0);
+ }finally{await a.close();await b.close();}
+});
+test("marketplace review gate and withdrawal with independent moderator",async({browser})=>{
+ const a=await browser.newContext({baseURL:base}),r=await browser.newContext({baseURL:base});const path="/api/v2/marketplace";
+ const call=(ctx,path,method,data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[a,"OWNER_A"],[r,"REVIEWER"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ const res=await call(a,path,"POST",{display_name:"QA reviewed institute",city:"Kanpur",subject:"school",description:"Synthetic listing for review.",status:"published"});expect(res.status()).toBe(201);const id=(await res.json()).listing.id;
+ const visible=async()=> (await (await call(a,path,"GET")).json()).listings.some(x=>x.id===id);
+ expect(await visible()).toBe(false);expect((await call(a,path,"PATCH",{listing_id:id,status:"published",verified_identity:true,verified_details:true})).status()).toBe(403);
+ expect((await call(r,path,"PATCH",{listing_id:id,status:"published",verified_identity:true})).status()).toBe(400);
+ const p=await r.newPage();await p.goto("/admin/control");await p.getByRole("button",{name:"Load authorized workspace"}).click();const item=p.locator("article.lesson-example").filter({hasText:"QA reviewed institute"});await item.getByLabel("I independently verified institute identity.").check();await item.getByLabel("I checked public details and supporting evidence.").check();await item.getByRole("button",{name:"Publish listing"}).click();await expect(p.getByText("Listing published.",{exact:true})).toBeVisible();
+ expect(await visible()).toBe(true);
+ await item.getByRole("button",{name:"Withdraw listing"}).click();await expect(p.getByText("Listing withdrawn.",{exact:true})).toBeVisible();expect(await visible()).toBe(false);
+ }finally{await a.close();await r.close();}
+});

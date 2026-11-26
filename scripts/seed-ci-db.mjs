@@ -12,7 +12,7 @@ const key=status.ANON_KEY||status.PUBLISHABLE_KEY;
 const admin=status.SERVICE_ROLE_KEY||status.SECRET_KEY;
 if(!key||!admin)throw Error("Local auth keys missing");
 for(const secret of [key,admin,db.password])if(secret)console.log("::add-mask::"+secret);
-for(const name of ["bootstrap","owner-pilot-admissions","owner-pilot-performance","coaching-memberships","coaching-attendance-write","coaching-revenue","manual-upi","staging-qa-marker"]){
+for(const name of ["bootstrap","owner-pilot-admissions","owner-pilot-performance","coaching-memberships","coaching-attendance-write","coaching-revenue","manual-upi","learning-cloud","coaching-marketplace","staging-qa-marker"]){
  execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-f","db/"+name+".sql"],{stdio:["ignore","ignore","pipe"]});
 }
 async function call(path,body,apiKey,token){
@@ -55,12 +55,14 @@ for(const [label,role,active] of [["ADMIN","institute_admin",true],["TEACHER","t
  if(role==="student"||role==="guardian")sql+="insert into public.st_learner_access(institute_id,user_id,learner_id,approved_at) values("+uuid(tenantA)+","+uuid(u.id)+","+uuid(l.id)+",now());";
  if(role==="guardian")sql+="insert into public.st_learner_access(institute_id,user_id,learner_id,approved_at,revoked_at) values("+uuid(tenantA)+","+uuid(u.id)+","+uuid(m.id)+",now(),now());";
  execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-c",sql],{stdio:["ignore","ignore","pipe"]});
+ if(label==="STUDENT")execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-c","insert into public.st_learning_accounts(user_id,active) values("+uuid(u.id)+",true);"],{stdio:["ignore","ignore","pipe"]});
  values["STAGING_"+label+"_EMAIL"]=email;values["STAGING_"+label+"_PASSWORD"]=password;
 }
 const reviewEmail="qa-reviewer@example.test",reviewPassword=randomBytes(24).toString("hex");
 console.log("::add-mask::"+reviewPassword);
 const reviewer=await call("/auth/v1/admin/users",{email:reviewEmail,password:reviewPassword,email_confirm:true},admin,admin.startsWith("eyJ")?admin:undefined);
 execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-c","insert into public.st_platform_reviewers(user_id,active) values("+uuid(reviewer.id)+",true);"],{stdio:["ignore","ignore","pipe"]});
+execFileSync("psql",[db.href,"-v","ON_ERROR_STOP=1","-c","insert into public.st_marketplace_moderators(user_id,active) values("+uuid(reviewer.id)+",true);"],{stdio:["ignore","ignore","pipe"]});
 values.STAGING_REVIEWER_EMAIL=reviewEmail;values.STAGING_REVIEWER_PASSWORD=reviewPassword;values.STAGING_ASSIGNED_LEARNER=l.id;values.STAGING_UNASSIGNED_LEARNER=m.id;values.STAGING_FOREIGN_LEARNER=n.id;
 values.ST_UPI_ENABLED="true";
 // Test-only image is deliberately not a scannable payment QR; never use a real VPA here.

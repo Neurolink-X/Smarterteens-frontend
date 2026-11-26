@@ -8,7 +8,7 @@
     "owner": "Verified owner pilot, own synthetic institute only",
     "instituteAdmin": "Provisioned read-only institute operations",
     "financeStaff": "Provisioned read-only fees and learner codes",
-    "platformAdmin": "Provisioned commercial reviewer only; no learner access or global administrator privileges",
+    "platformAdmin": "Provisioned commercial reviewer and/or independently provisioned marketplace moderator, no global learner access",
     "support": "Planned; no automatic data access"
   },
   "features": [
@@ -116,16 +116,20 @@
       "files": [
         "app/diagnostic/page.jsx",
         "app/api/v2/learning/diagnostic/route.ts",
-        "lib/diagnostic.mjs"
+        "lib/diagnostic.mjs",
+        "lib/adaptive-assessment.mjs",
+        "app/assessment-studio/page.jsx"
       ],
       "tests": [
         "tests/diagnostic.test.mjs",
         "tests/roadmap.test.mjs",
         "scripts/smoke.mjs",
-        "e2e/public.spec.mjs"
+        "e2e/public.spec.mjs",
+        "tests/cloud-assessment.test.mjs"
       ],
       "pages": [
-        "/diagnostic"
+        "/diagnostic",
+        "/assessment-studio"
       ],
       "apis": [
         "/api/v2/learning/diagnostic"
@@ -390,6 +394,74 @@
       "apis": [
         "/api/v2/subscription",
         "/api/v2/manual-upi"
+      ],
+      "staging": true
+    },
+    {
+      "id": "cloud-practice",
+      "purpose": "Private invite-only practice sync with explicit opt-in and revision checks",
+      "roles": [
+        "student"
+      ],
+      "flow": "Local checks → explicit sync → validated union → RLS persisted → restore or clear",
+      "positive": "Merge different device checks; read persisted cloud history",
+      "negative": "Unprovisioned account and stale deletion denied",
+      "integration": "Existing curriculum and session API",
+      "security": "Private self-only rows; self-reported practice, not grades; no real minor data in pilot",
+      "performance": "One bounded snapshot per account",
+      "files": [
+        "db/learning-cloud.sql",
+        "lib/cloud-progress.mjs",
+        "app/api/v2/learning/cloud/route.ts",
+        "app/student/cloud/page.jsx"
+      ],
+      "tests": [
+        "tests/cloud-assessment.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/student/cloud"
+      ],
+      "apis": [
+        "/api/v2/learning/cloud"
+      ],
+      "staging": true
+    },
+    {
+      "id": "reviewed-marketplace",
+      "purpose": "Independent moderation and public coaching directory",
+      "roles": [
+        "visitor",
+        "owner",
+        "platformAdmin"
+      ],
+      "flow": "Owner submits → moderator checks → publish → public read → withdraw",
+      "positive": "Only published approved snapshots visible",
+      "negative": "Owner approval, missing verification and unpublished public read denied",
+      "integration": "Control center, commercial review and coaching landing",
+      "security": "Separate provisioned moderator; no learner access; public columns only",
+      "performance": "Bounded listing and batched reviews",
+      "files": [
+        "db/coaching-marketplace.sql",
+        "lib/marketplace.mjs",
+        "app/api/v2/marketplace/route.ts",
+        "app/marketplace/page.jsx",
+        "app/admin/control/page.jsx"
+      ],
+      "tests": [
+        "tests/marketplace.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/marketplace",
+        "/admin/control"
+      ],
+      "apis": [
+        "/api/v2/marketplace"
       ],
       "staging": true
     }
