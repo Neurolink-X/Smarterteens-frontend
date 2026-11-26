@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
+  "buildCommand": "node scripts/production-gate.mjs && npm run verify:build",
   "installCommand": "npm install"
 }
