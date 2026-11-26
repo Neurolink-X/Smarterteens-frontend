@@ -235,7 +235,8 @@
         "lib/server/tenant.ts",
         "db/bootstrap.sql",
         "db/owner-pilot-admissions.sql",
-        "db/staging-qa-marker.sql"
+        "db/staging-qa-marker.sql",
+        "db/owner-pilot-performance.sql"
       ],
       "tests": [
         "tests/workspace.test.mjs",
