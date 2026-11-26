@@ -165,3 +165,28 @@ test("marketplace review gate and withdrawal with independent moderator",async({
  await item.getByRole("button",{name:"Withdraw listing"}).click();await expect(p.getByText("Listing withdrawn.",{exact:true})).toBeVisible();expect(await visible()).toBe(false);
  }finally{await a.close();await r.close();}
 });
+
+test("platform governance: exact totals, restricted directory, suspension and immutable audit",async({browser})=>{
+ const c=config(),ops=await browser.newContext({baseURL:base}),owner=await browser.newContext({baseURL:base}),teacher=await browser.newContext({baseURL:base});
+ const call=(ctx,path,method="GET",data)=>ctx.request.fetch(base+path,{method,headers:{Origin:base},...(data?{data}:{}),maxRedirects:0});
+ try{
+ for(const [ctx,label] of [[ops,"OPS"],[owner,"OWNER_A"],[teacher,"TEACHER"]])expect((await call(ctx,"/api/v2/session","POST",{email:process.env["STAGING_"+label+"_EMAIL"],password:process.env["STAGING_"+label+"_PASSWORD"]})).status()).toBe(200);
+ const path="/api/v2/admin";
+ expect([401,403]).toContain((await call(owner,path+"?mode=users")).status());
+ const r=await call(ops,path+"?mode=overview");expect(r.status()).toBe(200);const {overview}=await r.json();expect(overview.institutes).toBe(2);expect(overview.accounts).toBeGreaterThanOrEqual(10);expect(overview.verifiedPlatformPaymentPaise).toBeGreaterThanOrEqual(49900);
+ const userList=await call(ops,path+"?mode=users&search=qa-teacher");expect(userList.status()).toBe(200);const target=(await userList.json()).users[0];expect(target.email).toBe(process.env.STAGING_TEACHER_EMAIL);expect(target.suspended).toBe(false);
+ const auth=await rawAuth(c,process.env.STAGING_TEACHER_EMAIL,process.env.STAGING_TEACHER_PASSWORD);
+ const req={target:target.id,expected:target.revision,desired:true,reason_code:"security"};
+ expect([401,403]).toContain((await call(owner,path,"PATCH",req)).status());
+ expect((await call(ops,path,"PATCH",req)).status()).toBe(200);
+ expect((await call(teacher,"/api/v2/portal")).status()).toBe(403);
+ const direct=await raw(c,auth.access_token,"st_learners","code=eq.QA-ASSIGNED");expect(direct.status).toBe(200);expect(await direct.json()).toEqual([]);
+ expect((await call(ops,path,"PATCH",req)).status()).toBe(409);
+ const restored=await call(ops,path,"PATCH",{target:target.id,expected:target.revision+1,desired:false,reason_code:"resolved"});expect(restored.status()).toBe(200);
+ expect((await call(teacher,"/api/v2/portal")).status()).toBe(200);
+ const audit=await (await call(ops,path+"?mode=audit")).json();expect(audit.events.filter(e=>e.target_id===target.id).map(e=>e.suspended)).toEqual([false,true]);
+ const ownAdmin=(await (await call(ops,path+"?mode=users&search=qa-ops")).json()).users[0];expect(ownAdmin.protected).toBe(true);expect([401,403]).toContain((await call(ops,path,"PATCH",{target:ownAdmin.id,expected:0,desired:true,reason_code:"security"})).status());
+ const p=await ops.newPage();await p.goto("/admin/operations");await p.getByRole("button",{name:"Load platform analytics"}).click();await expect(p.getByRole("heading",{name:"Registered accounts"})).toBeVisible();
+ await p.getByRole("button",{name:"System health"}).click();await p.getByRole("button",{name:"Run health check"}).click();await expect(p.getByRole("heading",{name:"Ready",exact:true})).toBeVisible();
+ }finally{await ops.close();await owner.close();await teacher.close();}
+});

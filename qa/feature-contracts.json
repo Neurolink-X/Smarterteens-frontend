@@ -8,7 +8,7 @@
     "owner": "Verified owner pilot, own synthetic institute only",
     "instituteAdmin": "Provisioned read-only institute operations",
     "financeStaff": "Provisioned read-only fees and learner codes",
-    "platformAdmin": "Provisioned commercial reviewer and/or independently provisioned marketplace moderator, no global learner access",
+    "platformAdmin": "Separately provisioned platform operator, commercial reviewer or marketplace moderator; no implicit cross-role grants",
     "support": "Planned; no automatic data access"
   },
   "features": [
@@ -462,6 +462,40 @@
       ],
       "apis": [
         "/api/v2/marketplace"
+      ],
+      "staging": true
+    },
+    {
+      "id": "platform-governance",
+      "purpose": "Account directory, revocable application access, exact operational totals, audit and readiness",
+      "roles": [
+        "platformAdmin"
+      ],
+      "flow": "Verified admin → checked RPC → atomic state and audit → RLS enforcement → updated dashboard",
+      "positive": "Scoped directory, correct totals, suspend and restore without deleting data",
+      "negative": "Unauthorized admin calls, stale update and self-suspension denied; existing token cannot read suspended data",
+      "integration": "Existing auth, tenant tables, commercial reviews, marketplace and cloud progress",
+      "security": "Private definer functions with fixed search_path and explicit admin checks; restrictive RLS, no service key or public PII",
+      "performance": "50-account keyset pages, bounded audit and on-demand aggregate/readiness queries",
+      "files": [
+        "db/platform-governance.sql",
+        "lib/admin-governance.mjs",
+        "app/api/v2/admin/route.ts",
+        "app/api/ready/route.ts",
+        "app/admin/operations/page.jsx"
+      ],
+      "tests": [
+        "tests/admin-governance.test.mjs",
+        "e2e/staging.spec.mjs",
+        "e2e/public.spec.mjs",
+        "scripts/smoke.mjs"
+      ],
+      "pages": [
+        "/admin/operations"
+      ],
+      "apis": [
+        "/api/v2/admin",
+        "/api/ready"
       ],
       "staging": true
     }

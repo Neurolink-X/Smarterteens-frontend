@@ -21,4 +21,6 @@ assert.equal((await fetch(base+"/api/v2/subscription")).status,401);
 assert.equal((await fetch(base+"/api/v2/manual-upi")).status,401);
 assert.equal((await fetch(base+"/api/v2/learning/cloud")).status,401);
 assert.equal((await fetch(base+"/api/v2/marketplace?mode=manage")).status,401);
+assert.equal((await fetch(base+"/api/v2/admin")).status,401);
+const ready=await fetch(base+"/api/ready");assert.equal(ready.status,503);assert.equal((await ready.json()).status,"unavailable");
 console.log("HTTP smoke checks passed");
