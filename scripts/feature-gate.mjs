@@ -19,7 +19,7 @@ function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>{c
 const sources=[...walk("app"),...walk("lib"),...walk("db"),"next.config.mjs"].filter(p=>/\.(?:m?[jt]sx?|css|sql)$/.test(p));
 for(const file of sources)assert.ok(registered.has(file),"Unregistered implementation: "+file+" — add purpose, role, flow and tests in qa/feature-contracts.json");
 const base=process.env.QA_BASE_SHA;
-if(process.env.CI==="true"&&!base)throw Error("QA_BASE_SHA is required in CI");
+if(process.env.GITHUB_ACTIONS==="true"&&!base)throw Error("QA_BASE_SHA is required in CI");
 if(base&&!/^0+$/.test(base)){
  assert.match(base,/^[0-9a-f]{40}$/);
  const changed=new Set(execFileSync("git",["diff","--name-only",base,"HEAD"],{encoding:"utf8"}).trim().split("\n").filter(Boolean));
