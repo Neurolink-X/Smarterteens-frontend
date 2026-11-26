@@ -21,6 +21,7 @@ test("two actual staging owners: browser → API → DB → UI, tenant and role 
  const code="QA-"+randomUUID().slice(0,12);
  try{
   const p=await a.newPage(),q=await b.newPage();const [ad,bd,authA,authB]=await Promise.all([login(p,emailA,pwA),login(q,emailB,pwB),rawAuth(c,emailA,pwA),rawAuth(c,emailB,pwB)]);
+  const marker=await raw(c,authA.access_token,"st_qa_environment","id=eq.1");expect(marker.status,"Dedicated staging-only marker").toBe(200);expect(await marker.json()).toEqual([{id:1,purpose:"synthetic-staging-only"}]);
   expect(ad.institute.id).not.toBe(bd.institute.id);expect(ad.institute.owner_id).toBe(authA.user.id);expect(bd.institute.owner_id).toBe(authB.user.id);
   const form=p.locator("form").filter({has:p.getByRole("heading",{name:"Admission enquiry",exact:true})});
   await form.getByLabel("Synthetic enquiry code").fill(code);await form.getByLabel("Learning track").selectOption("class11");
