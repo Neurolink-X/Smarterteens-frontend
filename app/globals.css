@@ -75,3 +75,5 @@ button:disabled{opacity:.55;cursor:not-allowed}
 @media print{.site-header,.site-footer{display:none!important}.course-grid,.learning-layout{display:block}.course-card{break-inside:avoid}}
 
 @media print{.paper-controls,.catalog-intro{display:none!important}.paper-print{margin:0;border:0}.paper-print li{break-inside:avoid}}
+
+.field input:not([type=range]):not([type=checkbox]):not([type=radio]){width:100%;font:inherit;color:var(--ink);border:1px solid #b8cec6;border-radius:10px;background:white;padding:10px 12px;margin-top:5px;min-height:44px}
