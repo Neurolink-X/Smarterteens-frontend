@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "roles": {
+    "visitor": "Public pages only",
+    "student": "Local learning only; authenticated student is planned",
+    "parent": "Student-controlled printable summary only; verified parent account planned",
+    "teacher": "Public practice tools only; scoped staff account planned",
+    "owner": "Verified owner pilot, own synthetic institute only",
+    "instituteAdmin": "Planned; no owner permission inherited",
+    "financeStaff": "Planned; no access until scoped role exists",
+    "platformAdmin": "Planned; no client-side privilege grants",
+    "support": "Planned; no automatic data access"
+  },
+  "features": [
+    {
+      "id": "shell",
+      "purpose": "Responsive navigation, public site, privacy and legacy route recovery",
+      "roles": [
+        "visitor",
+        "student",
+        "parent",
+        "teacher",
+        "owner"
+      ],
+      "flow": "Navigation → route → rendered page or explicit unavailable state",
+      "positive": "All registered pages open; mobile menu works",
+      "negative": "Unknown courses and routes return 404",
+      "integration": "Course and studio navigation, legacy redirects",
+      "security": "No secret-bearing data or privileged navigation; response headers",
+      "performance": "No horizontal overflow; no uncaught errors",
+      "files": [
+        "app/page.jsx",
+        "app/layout.jsx",
+        "app/navigation.jsx",
+        "app/globals.css",
+        "app/not-found.jsx",
+        "app/privacy/page.jsx",
+        "app/legacy/[feature]/page.jsx",
+        "next.config.mjs"
+      ],
+      "tests": [
+        "e2e/public.spec.mjs",
+        "tests/legacy-migration.test.mjs"
+      ],
+      "pages": [
+        "/",
+        "/privacy",
+        "/legacy/parent"
+      ]
+    },
+    {
+      "id": "learning",
+      "purpose": "Find lessons, understand concepts and record local practice evidence",
+      "roles": [
+        "visitor",
+        "student"
+      ],
+      "flow": "Search → course → answer → validation → local progress → student summary",
+      "positive": "Correct answer persists; search/filter works",
+      "negative": "Wrong answer is not recorded; unknown lesson rejected",
+      "integration": "Courses, roadmap, project studio, family summary",
+      "security": "Local data only; no identity or verified mastery claim",
+      "performance": "No API polling for local learning",
+      "files": [
+        "app/courses/page.jsx",
+        "app/courses/explorer.jsx",
+        "app/course/[id]/page.jsx",
+        "app/course/[id]/player.jsx",
+        "app/student/page.jsx",
+        "app/missions/page.jsx",
+        "lib/courses.mjs",
+        "lib/curriculum.mjs",
+        "lib/roadmap.mjs"
+      ],
+      "tests": [
+        "tests/courses.test.mjs",
+        "tests/curriculum.test.mjs",
+        "tests/roadmap.test.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "pages": [
+        "/courses",
+        "/course/money",
+        "/course/ai",
+        "/course/science",
+        "/course/web",
+        "/course/algorithms",
+        "/course/math",
+        "/course/communication",
+        "/course/energy",
+        "/course/design",
+        "/course/data",
+        "/student",
+        "/missions"
+      ]
+    },
+    {
+      "id": "diagnostic",
+      "purpose": "Multilingual practice and evidence-scoped recommendations",
+      "roles": [
+        "visitor",
+        "student",
+        "parent"
+      ],
+      "flow": "GET questions → select answers → POST → scoring → feedback and courses",
+      "positive": "Valid answers yield score and related links in three languages",
+      "negative": "Incomplete answers or old version rejected",
+      "integration": "Diagnostic, course routes and learner summary",
+      "security": "No answer key in GET; no profile collection",
+      "performance": "One initial GET, one submission POST",
+      "files": [
+        "app/diagnostic/page.jsx",
+        "app/api/v2/learning/diagnostic/route.ts",
+        "lib/diagnostic.mjs"
+      ],
+      "tests": [
+        "tests/diagnostic.test.mjs",
+        "tests/roadmap.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "pages": [
+        "/diagnostic"
+      ],
+      "apis": [
+        "/api/v2/learning/diagnostic"
+      ]
+    },
+    {
+      "id": "simulations",
+      "purpose": "Safe interactive interdisciplinary and money experiments",
+      "roles": [
+        "visitor",
+        "student",
+        "teacher"
+      ],
+      "flow": "Inputs → bounded calculation → displayed results → optional server verification",
+      "positive": "Changed inputs update matching results",
+      "negative": "Invalid ranges, zero divisors and stale verification",
+      "integration": "Future world and course links",
+      "security": "No real payments or equipment operation",
+      "performance": "Local sliders do not send API requests",
+      "files": [
+        "app/labs/page.jsx",
+        "app/labs/experiments.jsx",
+        "app/labs/cross-subject/page.tsx",
+        "app/future/page.tsx",
+        "app/future/mobility.tsx",
+        "app/api/v2/labs/money/route.ts",
+        "lib/learning.mjs",
+        "lib/experiments.mjs",
+        "lib/interdisciplinary.mjs",
+        "lib/mobility.mjs",
+        "lib/future-world.mjs"
+      ],
+      "tests": [
+        "tests/learning.test.mjs",
+        "tests/experiments.test.mjs",
+        "tests/interdisciplinary.test.mjs",
+        "tests/future-world.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "pages": [
+        "/labs",
+        "/labs/cross-subject",
+        "/future"
+      ],
+      "apis": [
+        "/api/v2/labs/money"
+      ]
+    },
+    {
+      "id": "educator-tools",
+      "purpose": "Practice-paper draft, brand preview and indicative coaching price",
+      "roles": [
+        "visitor",
+        "teacher",
+        "owner"
+      ],
+      "flow": "Select options → validated local or server model → draft or estimate",
+      "positive": "Paper and brand update; price estimate matches",
+      "negative": "Invalid plan/topic rejected; no publishing or payment",
+      "integration": "Coaching landing and learning question bank",
+      "security": "No real student records collected",
+      "performance": "Local drafts do not call database",
+      "files": [
+        "app/coaching/page.jsx",
+        "app/coaching/brand/page.tsx",
+        "app/coaching/paper/page.tsx",
+        "app/pricing/page.jsx",
+        "app/api/v2/coaching/estimate/route.ts",
+        "lib/paper-builder.mjs"
+      ],
+      "tests": [
+        "tests/paper-builder.test.mjs",
+        "tests/learning.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "pages": [
+        "/coaching",
+        "/coaching/brand",
+        "/coaching/paper",
+        "/pricing"
+      ],
+      "apis": [
+        "/api/v2/coaching/estimate"
+      ]
+    },
+    {
+      "id": "coaching-owner",
+      "purpose": "Authenticated synthetic institute records, admissions, batches, attendance and fees",
+      "roles": [
+        "owner"
+      ],
+      "flow": "Sign in → browser form → session API → tenant API → Postgres/RLS → persisted row → updated UI",
+      "positive": "Owner creates and updates own records, receipts match invoice",
+      "negative": "Invalid records, duplicate receipt, stale update, wrong owner and cross-tenant FK denied",
+      "integration": "Admissions, learners, attendance, invoices, receipts and summary",
+      "security": "Real two-owner API and direct Data API isolation; no production database",
+      "performance": "Bounded queries, no polling, private no-store",
+      "files": [
+        "app/workspace/page.jsx",
+        "app/api/v2/workspace/route.ts",
+        "app/api/v2/session/route.ts",
+        "lib/pilot-server.mjs",
+        "lib/workspace.mjs",
+        "lib/coaching-insights.mjs",
+        "lib/server/tenant.ts",
+        "db/bootstrap.sql",
+        "db/owner-pilot-admissions.sql"
+      ],
+      "tests": [
+        "tests/workspace.test.mjs",
+        "tests/coaching-insights.test.mjs",
+        "tests/api-contract.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/staging.spec.mjs"
+      ],
+      "pages": [
+        "/workspace"
+      ],
+      "apis": [
+        "/api/v2/session",
+        "/api/v2/workspace"
+      ],
+      "staging": true
+    },
+    {
+      "id": "platform-api",
+      "purpose": "Safe bounded request and response contracts and process health",
+      "roles": [
+        "visitor",
+        "student",
+        "owner"
+      ],
+      "flow": "Request → content-type and bounded JSON validation → handler → no-store response",
+      "positive": "Valid payloads return matching contracts",
+      "negative": "Oversized or invalid JSON rejected; internal errors hidden",
+      "integration": "All backend handlers",
+      "security": "No secrets in errors; no-store; origin check for mutations",
+      "performance": "Bounded request body and response latency",
+      "files": [
+        "app/api/health/route.ts",
+        "lib/http.mjs",
+        "lib/server/api-contract.ts"
+      ],
+      "tests": [
+        "tests/http.test.mjs",
+        "tests/api-contract.test.mjs",
+        "scripts/smoke.mjs",
+        "e2e/public.spec.mjs"
+      ],
+      "apis": [
+        "/api/health"
+      ],
+      "pages": []
+    }
+  ]
+}
