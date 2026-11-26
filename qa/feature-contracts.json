@@ -488,7 +488,8 @@
         "tests/admin-governance.test.mjs",
         "e2e/staging.spec.mjs",
         "e2e/public.spec.mjs",
-        "scripts/smoke.mjs"
+        "scripts/smoke.mjs",
+        "tests/monitor-readiness.test.mjs"
       ],
       "pages": [
         "/admin/operations"
