@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 const base="http://localhost:3000";
-for(const p of ["/","/courses","/course/money","/course/math","/course/communication","/course/energy","/course/design","/course/data","/missions","/future","/student","/diagnostic","/labs","/labs/cross-subject","/coaching","/coaching/paper","/coaching/brand","/pricing","/privacy","/api/health"]){const r=await fetch(base+p);assert.equal(r.status,200,p);}
+const registry=JSON.parse(fs.readFileSync("qa/feature-contracts.json","utf8"));
+for(const p of [...new Set(registry.features.flatMap(f=>f.pages)),"/api/health"]){const r=await fetch(base+p);assert.equal(r.status,200,p);assert.equal(r.headers.get("x-content-type-options"),"nosniff",p);assert.equal(r.headers.get("x-frame-options"),"DENY",p);}
 const post=(p,b)=>fetch(base+p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
 const money=await post("/api/v2/labs/money",{purchased:20,sold:15,unitCost:40,unitPrice:65,overhead:100});assert.equal(money.status,200);assert.deepEqual(await money.json(),{sales:975,cashSpent:900,cashChange:75,profit:275,inventoryCost:200});
 assert.equal((await post("/api/v2/labs/money",{})).status,400);
